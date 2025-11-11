@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <main class="bg-slate-900">
       {/* Hero Section */}
-      <Hero />
+      <Hero backgroundImage="" />
 
       {/* Main Title Section */}
       <div class="bg-slate-800 py-12 sm:py-16">
