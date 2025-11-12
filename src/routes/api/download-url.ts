@@ -1,49 +1,43 @@
-// src/server/api/download-url.ts
-import { createHandler } from '@solidjs/start/server';
+// src/routes/api/download-url.ts
+import type { APIEvent } from '@solidjs/start/server';
 import { S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 
-// Config — move to env later
-const BUCKET_NAME = process.env.S3_BUCKET;
-const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN;
-const WINDOWS = process.env.WINDOWS_INSTALLER_NAME;
+// Validate env at module level
+const required = ['S3_BUCKET', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'WINDOWS_INSTALLER_NAME'];
+for (const key of required) {
+  if (!process.env[key]) {
+    throw new Error(`Missing env: ${key}`);
+  }
+}
 
-// Platform → S3 key mapping (match your upload paths!)
-const PLATFORM_PATHS: Record<string, string> = {
-  'windows-x86_64': `releases/${WINDOWS}`,
-  // 'darwin-x86_64': 'releases/MyApp_1.2.0_x64.dmg',
-  // 'darwin-aarch64': 'releases/MyApp_1.2.0_aarch64.dmg',
-  // 'linux-x86_64': 'releases/MyApp-1.2.0.AppImage',
-};
+const PLATFORM_PATHS = {
+  'windows-x86_64': `releases/${process.env.WINDOWS_INSTALLER_NAME}`,
+} as const;
 
-export const GET = createHandler(async (request) => {
+export async function GET({ request }: APIEvent) { // ✅ Modern style
+  console.log('✅ API Route Hit!');
+  
   try {
-    const url = new URL(request.request.url);
-    console.log('API Route Hit - URL:', url.href);
-    console.log('Environment check:', {
-      hasRegion: !!process.env.AWS_REGION,
-      hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-      hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
-      hasBucket: !!process.env.S3_BUCKET,
-      bucketName: process.env.S3_BUCKET,
-    });
-    
+    // ✅ Correct way to get URL in APIEvent
+    const url = new URL(request.url); // ← request.url (not request.request.url)
     const platform = url.searchParams.get('platform');
+    
     console.log('Requested platform:', platform);
 
-    // Validate platform
-    if (!platform || !PLATFORM_PATHS[platform]) {
-      console.log('Invalid platform:', platform, 'Available:', Object.keys(PLATFORM_PATHS));
-      return new Response(JSON.stringify({ error: 'Invalid platform' }), {
+    if (!platform || !(platform in PLATFORM_PATHS)) {
+      return new Response(JSON.stringify({ 
+        error: `Platform '${platform}' not supported. Available: ${Object.keys(PLATFORM_PATHS).join(', ')}` 
+      }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const s3Key = PLATFORM_PATHS[platform];
-    const filename = s3Key.split('/').pop() || '';
-    console.log('S3 Key:', s3Key, 'Filename:', filename);
+    const s3Key = PLATFORM_PATHS[platform as keyof typeof PLATFORM_PATHS];
+    const filename = s3Key.split('/').pop() || 'installer.exe';
+    console.log('region: ', process.env.AWS_REGION)
 
     // Get signed URL (expires in 5 min)
     const s3 = new S3Client({ 
@@ -53,27 +47,30 @@ export const GET = createHandler(async (request) => {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
       }
     });
+
     const command = new GetObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: s3Key,
+      Bucket: process.env.S3_BUCKET,
+      Key: s3Key
     });
 
-    console.log('Generating signed URL...');
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
-    console.log('Signed URL generated successfully');
-    
+
     return new Response(JSON.stringify({ url: signedUrl, filename }), {
       headers: { 'Content-Type': 'application/json' }
     });
-  } catch (err) {
-    console.error('Download URL error:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Download unavailable';
+    
+  } catch (err: any) {
+    console.error('💥 API Error:', {
+      message: err.message,
+      name: err.name,
+      platform: new URL(request.url).searchParams.get('platform')
+    });
+    
     return new Response(JSON.stringify({ 
-      error: errorMessage,
-      details: err instanceof Error ? err.stack : undefined 
+      error: 'Download service temporarily unavailable' 
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-});
+}
