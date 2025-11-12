@@ -20,7 +20,6 @@ export default function CreateLayout() {
       }
       
       const platform = toTauriPlatform(os);
-      console.log('platform:', platform)
       if (!platform) {
         alert(`Platform ${os} is not supported yet.`);
         return;
