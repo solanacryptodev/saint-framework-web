@@ -1,5 +1,5 @@
 import PlayLayout from '~/components/PlayLayout';
 
-export default function Play() {
+export default function PlayIndex() {
   return <PlayLayout />;
 }

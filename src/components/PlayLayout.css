@@ -11,6 +11,13 @@
   transition: margin-left 0.3s ease;
 }
 
+.play-content-full {
+  flex: 1;
+  padding: 0;
+  overflow-y: auto;
+  width: 100%;
+}
+
 .games-view {
   max-width: 1400px;
   margin: 0 auto;

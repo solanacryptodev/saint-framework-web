@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
+import { useLocation } from '@solidjs/router';
 import GameSidebar from './GameSidebar';
 import Carousel from './Carousel';
 import GameCard, { type GameCardData } from './GameCard';
