@@ -20,15 +20,18 @@ export default function CreateLayout() {
       }
       
       const platform = toTauriPlatform(os);
+      console.log('platform:', platform)
       if (!platform) {
         alert(`Platform ${os} is not supported yet.`);
         return;
       }
-      
       // Fetch download URL from API
-      const response = await fetch(`/api/downloadUrl?platform=${platform}`);
+      const response = await fetch(`/api/download-url?platform=${platform}`);
+
+      
       if (!response.ok) {
         const error = await response.json();
+        console.log('error is: ', error)
         throw new Error(error.error || 'Download failed');
       }
       
@@ -88,7 +91,7 @@ export default function CreateLayout() {
                 title={isDownloading() ? "Downloading..." : "Create Game"}
                 description="Build immersive text-based adventures"
                 isHighlighted={true}
-                onClick={handleDownloadInstaller}
+                onClick={() => handleDownloadInstaller()}
               />
               
               <CreationCard
