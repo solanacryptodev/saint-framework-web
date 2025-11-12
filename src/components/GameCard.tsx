@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import './GameCard.css';
 
 export interface GameCardData {
@@ -19,11 +20,17 @@ interface GameCardProps {
 }
 
 export default function GameCard(props: GameCardProps) {
+  const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = createSignal(false);
 
   const toggleFavorite = (e: MouseEvent) => {
     e.preventDefault();
     setIsFavorited(!isFavorited());
+  };
+
+  const handleShowMore = () => {
+    const gameSlug = props.game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    navigate(`/play/game/${gameSlug}`);
   };
 
   return (
@@ -101,7 +108,7 @@ export default function GameCard(props: GameCardProps) {
           )}
         </div>
 
-        <button class="show-more-btn">
+        <button class="show-more-btn" onClick={handleShowMore}>
           Show More
         </button>
       </div>
