@@ -6,15 +6,21 @@ interface CreationCardProps {
   description: string;
   isComingSoon?: boolean;
   isHighlighted?: boolean;
+  onClick?: () => void;
 }
 
 const CreationCard: Component<CreationCardProps> = (props) => {
   return (
-    <div class={`relative rounded-2xl border-2 p-8 transition-all duration-300 hover:scale-105 ${
-      props.isHighlighted 
-        ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-400' 
-        : 'bg-slate-800/50 border-slate-700 hover:border-purple-500'
-    }`}>
+    <div 
+      onClick={props.onClick}
+      class={`relative rounded-2xl border-2 p-8 transition-all duration-300 hover:scale-105 ${
+        props.onClick ? 'cursor-pointer' : ''
+      } ${
+        props.isHighlighted 
+          ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-400' 
+          : 'bg-slate-800/50 border-slate-700 hover:border-purple-500'
+      }`}
+    >
       {props.isComingSoon && (
         <div class="absolute top-4 right-4 bg-yellow-500 text-slate-900 text-sm font-bold px-4 py-1 rounded-full">
           Coming Soon

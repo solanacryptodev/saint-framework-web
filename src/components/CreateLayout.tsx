@@ -1,7 +1,52 @@
+import { createSignal } from "solid-js";
 import CreationCard from "./CreationCard";
 import Footer from "./Footer";
+import { detectPlatform, toTauriPlatform } from "../utils/platform";
 
 export default function CreateLayout() {
+  const [isDownloading, setIsDownloading] = createSignal(false);
+
+  const handleDownloadInstaller = async () => {
+    if (isDownloading()) return;
+    
+    try {
+      setIsDownloading(true);
+      
+      // Detect platform
+      const os = detectPlatform();
+      if (!os) {
+        alert("Could not detect your operating system. Please download manually.");
+        return;
+      }
+      
+      const platform = toTauriPlatform(os);
+      if (!platform) {
+        alert(`Platform ${os} is not supported yet.`);
+        return;
+      }
+      // Fetch download URL from API
+      const response = await fetch(`/api/download-url?platform=${platform}`);
+
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.log('error is: ', error)
+        throw new Error(error.error || 'Download failed');
+      }
+      
+      const data = await response.json();
+      
+      // Initiate download
+      window.location.href = data.url;
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div class="bg-slate-900 min-h-screen flex flex-col">
       {/* Main Content - Top Third */}
@@ -42,9 +87,10 @@ export default function CreateLayout() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
-                title="Create Game"
+                title={isDownloading() ? "Downloading..." : "Create Game"}
                 description="Build immersive text-based adventures"
                 isHighlighted={true}
+                onClick={() => handleDownloadInstaller()}
               />
               
               <CreationCard
