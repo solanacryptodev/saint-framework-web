@@ -32,7 +32,7 @@ export default function JoinForm(props: JoinFormProps) {
   return (
     <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
       <h2 class="text-3xl font-bold text-white mb-8 text-center">Create Your Profile</h2>
-      
+
       <form onSubmit={handleSubmit} class="space-y-6">
         {/* First Name and Last Name */}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -43,7 +43,7 @@ export default function JoinForm(props: JoinFormProps) {
               placeholder="Enter your first name"
               value={firstName()}
               onInput={(e) => setFirstName(e.currentTarget.value)}
-              class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors"
+              class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 transition-colors"
               required
             />
           </div>
@@ -54,7 +54,7 @@ export default function JoinForm(props: JoinFormProps) {
               placeholder="Enter your last name"
               value={lastName()}
               onInput={(e) => setLastName(e.currentTarget.value)}
-              class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors"
+              class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 transition-colors"
               required
             />
           </div>
@@ -68,7 +68,7 @@ export default function JoinForm(props: JoinFormProps) {
             placeholder="Choose a unique username"
             value={username()}
             onInput={(e) => setUsername(e.currentTarget.value)}
-            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors"
+            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 transition-colors"
             required
           />
         </div>
@@ -81,7 +81,7 @@ export default function JoinForm(props: JoinFormProps) {
             placeholder="Enter your email address"
             value={email()}
             onInput={(e) => setEmail(e.currentTarget.value)}
-            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors"
+            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 transition-colors"
             required
           />
         </div>
@@ -94,7 +94,7 @@ export default function JoinForm(props: JoinFormProps) {
             placeholder="Create a strong password"
             value={password()}
             onInput={(e) => setPassword(e.currentTarget.value)}
-            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors"
+            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 transition-colors"
             required
           />
         </div>
@@ -107,7 +107,7 @@ export default function JoinForm(props: JoinFormProps) {
             placeholder="Confirm your password"
             value={confirmPassword()}
             onInput={(e) => setConfirmPassword(e.currentTarget.value)}
-            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors"
+            class="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 transition-colors"
             required
           />
         </div>
@@ -119,16 +119,16 @@ export default function JoinForm(props: JoinFormProps) {
             id="terms"
             checked={agreedToTerms()}
             onChange={(e) => setAgreedToTerms(e.currentTarget.checked)}
-            class="mt-1 w-4 h-4 accent-purple-400"
+            class="mt-1 w-4 h-4 accent-yellow-500"
             required
           />
           <label for="terms" class="text-slate-300 text-sm">
             I agree to the{" "}
-            <a href="#" class="text-purple-400 hover:text-purple-300 transition-colors">
+            <a href="#" class="text-yellow-500 hover:text-yellow-400 transition-colors">
               Terms of Service
             </a>{" "}
             and{" "}
-            <a href="#" class="text-purple-400 hover:text-purple-300 transition-colors">
+            <a href="#" class="text-yellow-500 hover:text-yellow-400 transition-colors">
               Privacy Policy
             </a>
           </label>
@@ -138,7 +138,7 @@ export default function JoinForm(props: JoinFormProps) {
         <div class="bg-slate-700/30 border border-slate-600 rounded-lg p-4">
           <div class="flex justify-between items-center mb-2">
             <span class="text-white font-semibold">Selected Tier:</span>
-            <span class="text-purple-400 font-bold">{props.selectedTier()}</span>
+            <span class="text-yellow-500 font-bold">{props.selectedTier()}</span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-white font-semibold">Monthly Price:</span>
@@ -151,7 +151,7 @@ export default function JoinForm(props: JoinFormProps) {
         {/* Submit Button */}
         <button
           type="submit"
-          class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 rounded-lg text-lg transition-all duration-300 transform hover:scale-[1.02]"
+          class="w-full bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white font-bold py-4 rounded-lg text-lg transition-all duration-300 transform hover:scale-[1.02]"
         >
           Create Account & Start Free
         </button>
@@ -159,7 +159,7 @@ export default function JoinForm(props: JoinFormProps) {
         {/* Sign In Link */}
         <p class="text-center text-slate-400">
           Already have an account?{" "}
-          <a href="#" class="text-purple-400 hover:text-purple-300 transition-colors">
+          <a href="#" class="text-yellow-500 hover:text-yellow-400 transition-colors">
             Sign in here
           </a>
         </p>
