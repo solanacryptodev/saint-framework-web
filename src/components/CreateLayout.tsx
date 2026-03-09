@@ -8,17 +8,17 @@ export default function CreateLayout() {
 
   const handleDownloadInstaller = async () => {
     if (isDownloading()) return;
-    
+
     try {
       setIsDownloading(true);
-      
+
       // Detect platform
       const os = detectPlatform();
       if (!os) {
         alert("Could not detect your operating system. Please download manually.");
         return;
       }
-      
+
       const platform = toTauriPlatform(os);
       if (!platform) {
         alert(`Platform ${os} is not supported yet.`);
@@ -27,18 +27,18 @@ export default function CreateLayout() {
       // Fetch download URL from API
       const response = await fetch(`/api/download-url?platform=${platform}`);
 
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.log('error is: ', error)
         throw new Error(error.error || 'Download failed');
       }
-      
+
       const data = await response.json();
-      
+
       // Initiate download
       window.location.href = data.url;
-      
+
     } catch (error) {
       console.error('Download error:', error);
       alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -48,7 +48,7 @@ export default function CreateLayout() {
   };
 
   return (
-    <div class="bg-slate-900 min-h-screen flex flex-col">
+    <div class="min-h-screen flex flex-col" style="background-color: #080c14;">
       {/* Main Content - Top Third */}
       <div class="flex-1 flex flex-col">
         {/* Hero Section with significant top padding */}
@@ -58,7 +58,7 @@ export default function CreateLayout() {
             <div class="text-center mb-16 sm:mb-20">
               <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
                 Create Your{" "}
-                <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <span class="bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-600 bg-clip-text text-transparent">
                   Universe
                 </span>
               </h1>
@@ -79,7 +79,7 @@ export default function CreateLayout() {
                 description="Extend functionality with custom plugins"
                 isComingSoon={true}
               />
-              
+
               <CreationCard
                 icon={
                   <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ export default function CreateLayout() {
                 isHighlighted={true}
                 onClick={() => handleDownloadInstaller()}
               />
-              
+
               <CreationCard
                 icon={
                   <svg class="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,10 +111,10 @@ export default function CreateLayout() {
                 Ready to start building? Game creation is now available with our intuitive tools.
               </p>
               <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button class="bg-transparent border-2 border-purple-400 hover:bg-purple-400/10 text-purple-300 font-semibold px-8 py-3 rounded-full text-lg transition-all duration-300">
+                <button class="bg-transparent border-2 border-yellow-500 hover:bg-yellow-500/10 text-yellow-400 font-semibold px-8 py-3 rounded-full text-lg transition-all duration-300">
                   View Documentation
                 </button>
-                <button class="bg-transparent border-2 border-pink-400 hover:bg-pink-400/10 text-pink-300 font-semibold px-8 py-3 rounded-full text-lg transition-all duration-300">
+                <button class="bg-transparent border-2 border-yellow-600 hover:bg-yellow-600/10 text-yellow-500 font-semibold px-8 py-3 rounded-full text-lg transition-all duration-300">
                   Browse Examples
                 </button>
               </div>

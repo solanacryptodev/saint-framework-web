@@ -13,19 +13,18 @@ interface MemberLevelProps {
 
 export default function MemberLevel(props: MemberLevelProps) {
   return (
-    <div 
-      class={`relative border-2 rounded-xl p-6 transition-all duration-300 ${
-        props.isSelected 
-          ? 'border-purple-400 bg-purple-900/20' 
-          : 'border-slate-700 hover:border-purple-500/50'
-      }`}
+    <div
+      class={`relative border-2 rounded-xl p-6 transition-all duration-300 ${props.isSelected
+          ? 'border-yellow-500 bg-yellow-500/10'
+          : 'border-slate-700 hover:border-yellow-500/50'
+        }`}
       onClick={props.onSelect}
       style={{ cursor: props.onSelect ? 'pointer' : 'default' }}
     >
       {/* Popular Badge */}
       {props.isPopular && (
         <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <span class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
+          <span class="bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
             Most Popular
           </span>
         </div>
@@ -43,16 +42,15 @@ export default function MemberLevel(props: MemberLevelProps) {
       {/* Header */}
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <div class={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-            props.isSelected ? 'border-purple-400 bg-purple-400' : 'border-slate-500'
-          }`}>
+          <div class={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${props.isSelected ? 'border-yellow-500 bg-yellow-500' : 'border-slate-500'
+            }`}>
             {props.isSelected && (
               <div class="w-3 h-3 bg-white rounded-full"></div>
             )}
           </div>
           <h3 class="text-2xl font-bold text-white">{props.title}</h3>
         </div>
-        <div class="text-3xl font-bold text-purple-400">{props.price}</div>
+        <div class="text-3xl font-bold text-yellow-500">{props.price}</div>
       </div>
 
       {/* Description */}

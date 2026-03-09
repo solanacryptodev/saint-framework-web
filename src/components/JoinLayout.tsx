@@ -7,7 +7,7 @@ export default function JoinLayout() {
   const [selectedTier, setSelectedTier] = createSignal("Free Tier");
 
   return (
-    <div class="bg-slate-900 min-h-screen flex flex-col">
+    <div class="min-h-screen flex flex-col" style="background-color: #080c14;">
       {/* Main Content */}
       <div class="flex-1 flex flex-col">
         {/* Hero Section */}
@@ -16,7 +16,7 @@ export default function JoinLayout() {
             <div class="text-center mb-12 sm:mb-16">
               <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
                 Join the{" "}
-                <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                <span class="bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-600 bg-clip-text text-transparent">
                   Adventure
                 </span>
               </h1>
