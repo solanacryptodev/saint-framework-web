@@ -1,17 +1,17 @@
 .game-card {
-  background-color: #1e293b;
+  background-color: var(--card-bg);
   border-radius: 0.75rem;
   overflow: hidden;
   transition: all 0.3s ease;
-  border: 1px solid #334155;
+  border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
 }
 
 .game-card:hover {
-  border-color: #475569;
+  border-color: rgba(245, 197, 24, 0.4);
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 197, 24, 0.07);
 }
 
 .game-card-image {
@@ -24,15 +24,15 @@
 .game-placeholder-gradient {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #6366f1 100%);
+  background: linear-gradient(135deg, var(--card-bg-alt) 0%, var(--dark-bg) 50%, var(--darker-bg) 100%);
 }
 
 .game-card:nth-child(2n) .game-placeholder-gradient {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--darker-bg) 0%, var(--card-bg) 50%, var(--card-bg-alt) 100%);
 }
 
 .game-card:nth-child(3n) .game-placeholder-gradient {
-  background: linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%);
+  background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg-alt) 50%, var(--card-bg) 100%);
 }
 
 .game-badge {
@@ -48,28 +48,28 @@
 
 .game-badge.free {
   left: 0.75rem;
-  background-color: #22c55e;
-  color: #ffffff;
+  background-color: var(--gold-primary);
+  color: var(--darker-bg);
 }
 
 .game-badge.new {
-  right: 0.75rem;
-  background-color: #3b82f6;
-  color: #ffffff;
+  left: 4.5rem;
+  background-color: var(--card-bg-alt);
+  border: 1px solid rgba(245, 197, 24, 0.4);
+  color: var(--gold-light);
 }
 
-.game-badge.free + .game-badge.new {
-  right: 0.75rem;
-  left: auto;
+.game-badge.free+.game-badge.new {
+  left: 5rem;
 }
 
 .favorite-btn {
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  color: #cbd5e1;
+  background: rgba(8, 12, 20, 0.8);
+  border: 1px solid rgba(245, 197, 24, 0.25);
+  color: var(--text-gray);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -82,19 +82,19 @@
 }
 
 .favorite-btn:hover {
-  background: rgba(15, 23, 42, 0.95);
-  border-color: rgba(236, 72, 153, 0.5);
+  background: rgba(8, 12, 20, 0.95);
+  border-color: rgba(245, 197, 24, 0.6);
   transform: scale(1.1);
 }
 
 .favorite-btn.favorited {
-  background: rgba(236, 72, 153, 0.2);
-  border-color: #ec4899;
-  color: #ec4899;
+  background: rgba(245, 197, 24, 0.15);
+  border-color: var(--gold-primary);
+  color: var(--gold-primary);
 }
 
 .favorite-btn.favorited:hover {
-  background: rgba(236, 72, 153, 0.3);
+  background: rgba(245, 197, 24, 0.25);
   transform: scale(1.15);
 }
 
@@ -108,7 +108,7 @@
 .game-card-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text-light);
   margin-bottom: 1rem;
 }
 
@@ -124,31 +124,34 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #94a3b8;
+  color: var(--text-gray);
   font-size: 0.875rem;
 }
 
 .meta-item svg {
   flex-shrink: 0;
-  color: #a855f7;
+  color: var(--gold-primary);
 }
 
 .show-more-btn {
   width: 100%;
   padding: 0.75rem;
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-primary));
+  color: var(--darker-bg);
   border: none;
   border-radius: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .show-more-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+  box-shadow: 0 4px 16px rgba(245, 197, 24, 0.35);
+  background: linear-gradient(135deg, #ffe080, var(--gold-light));
 }
 
 .show-more-btn:active {

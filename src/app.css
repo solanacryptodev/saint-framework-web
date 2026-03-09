@@ -2,19 +2,26 @@
 @import "tailwindcss";
 
 :root {
-  /* Theme Colors */
-  --primary-color: #a855f7; /* Purple */
-  --primary-light: #c084fc;
-  --primary-dark: #7e22ce;
-  --secondary-color: #3b82f6; /* Blue */
-  --secondary-light: #60a5fa;
-  --secondary-dark: #1d4ed8;
-  --accent-color: #ec4899; /* Pink */
-  --dark-bg: #0f172a; /* Dark navy/slate */
-  --darker-bg: #020617;
-  --gray-bg: #1e293b;
+  /* Gold / Yellow Theme */
+  --gold-primary: #f5c518;
+  --gold-light: #ffd966;
+  --gold-dark: #c49b00;
+  --gold-dim: #a07800;
+
+  /* Background */
+  --dark-bg: #080c14;
+  --darker-bg: #030508;
+  --card-bg: #0d1525;
+  --card-bg-alt: #111b2e;
+  --border-color: #1e2d4a;
+
+  /* Text */
   --text-light: #f1f5f9;
-  --text-gray: #94a3b8;
+  --text-gray: #7a8fad;
+  --text-muted: #4a5568;
+
+  /* Accent */
+  --accent-glow: rgba(245, 197, 24, 0.18);
 }
 
 body {
@@ -26,8 +33,55 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--dark-bg);
+  color: var(--text-light);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Goldman', sans-serif;
+}
+
+/* Gold gradient utility */
+.gold-gradient-text {
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card style */
+.saint-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+/* Gold button */
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-primary));
+  color: #080c14;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+  background: linear-gradient(135deg, #ffe080, var(--gold-light));
+  box-shadow: 0 0 24px var(--accent-glow);
+  transform: scale(1.04);
+}
+
+/* Ghost button */
+.btn-ghost {
+  background: transparent;
+  border: 1.5px solid rgba(245, 197, 24, 0.5);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-ghost:hover {
+  border-color: var(--gold-primary);
+  color: var(--gold-light);
+  background: rgba(245, 197, 24, 0.07);
 }
