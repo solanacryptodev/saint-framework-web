@@ -3,6 +3,7 @@ import { useLocation } from '@solidjs/router';
 import GameSidebar from './GameSidebar';
 import Carousel from './Carousel';
 import GameCard, { type GameCardData } from './GameCard';
+import Footer from './Footer';
 import './PlayLayout.css';
 
 // Dummy game data
@@ -115,80 +116,83 @@ export default function PlayLayout() {
   const [activeView, setActiveView] = createSignal('games');
 
   return (
-    <div class="play-layout">
-      <GameSidebar activeView={activeView()} onViewChange={setActiveView} />
-      
-      <main class="play-content">
-        <Show when={activeView() === 'games'}>
-          <div class="games-view">
-            {/* Featured Games Section */}
-            <section class="game-section">
-              <h2 class="section-title">Featured Games</h2>
-              <Carousel />
-            </section>
+    <>
+      <div class="play-layout">
+        <GameSidebar activeView={activeView()} onViewChange={setActiveView} />
 
-            {/* Dropdown Placeholders */}
-            <div class="filter-controls">
-              <button class="filter-btn">
-                <span>All Genres</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <button class="filter-btn">
-                <span>All Swarm Sizes</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
+        <main class="play-content">
+          <Show when={activeView() === 'games'}>
+            <div class="games-view">
+              {/* Featured Games Section */}
+              <section class="game-section">
+                <h2 class="section-title">Featured Games</h2>
+                <Carousel />
+              </section>
+
+              {/* Dropdown Placeholders */}
+              <div class="filter-controls">
+                <button class="filter-btn">
+                  <span>All Genres</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+                <button class="filter-btn">
+                  <span>All Swarm Sizes</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Free Games Section */}
+              <section class="game-section">
+                <h2 class="section-title">Free Games</h2>
+                <div class="game-grid">
+                  <For each={freeGames}>
+                    {(game) => <GameCard game={game} />}
+                  </For>
+                </div>
+              </section>
+
+              {/* Popular Games Section */}
+              <section class="game-section">
+                <h2 class="section-title">Popular Games</h2>
+                <div class="game-grid">
+                  <For each={popularGames}>
+                    {(game) => <GameCard game={game} />}
+                  </For>
+                </div>
+              </section>
+
+              {/* New Games Section */}
+              <section class="game-section">
+                <h2 class="section-title">New Games</h2>
+                <div class="game-grid">
+                  <For each={newGames}>
+                    {(game) => <GameCard game={game} />}
+                  </For>
+                </div>
+              </section>
             </div>
+          </Show>
 
-            {/* Free Games Section */}
-            <section class="game-section">
-              <h2 class="section-title">Free Games</h2>
-              <div class="game-grid">
-                <For each={freeGames}>
-                  {(game) => <GameCard game={game} />}
-                </For>
-              </div>
-            </section>
+          <Show when={activeView() === 'plugins'}>
+            <div class="coming-soon-view">
+              <h2>Plugins</h2>
+              <p>This feature is coming soon!</p>
+            </div>
+          </Show>
 
-            {/* Popular Games Section */}
-            <section class="game-section">
-              <h2 class="section-title">Popular Games</h2>
-              <div class="game-grid">
-                <For each={popularGames}>
-                  {(game) => <GameCard game={game} />}
-                </For>
-              </div>
-            </section>
-
-            {/* New Games Section */}
-            <section class="game-section">
-              <h2 class="section-title">New Games</h2>
-              <div class="game-grid">
-                <For each={newGames}>
-                  {(game) => <GameCard game={game} />}
-                </For>
-              </div>
-            </section>
-          </div>
-        </Show>
-
-        <Show when={activeView() === 'plugins'}>
-          <div class="coming-soon-view">
-            <h2>Plugins</h2>
-            <p>This feature is coming soon!</p>
-          </div>
-        </Show>
-
-        <Show when={activeView() === 'themes'}>
-          <div class="coming-soon-view">
-            <h2>Themes</h2>
-            <p>This feature is coming soon!</p>
-          </div>
-        </Show>
-      </main>
-    </div>
+          <Show when={activeView() === 'themes'}>
+            <div class="coming-soon-view">
+              <h2>Themes</h2>
+              <p>This feature is coming soon!</p>
+            </div>
+          </Show>
+        </main>
+      </div>
+      <Footer />
+    </>
   );
 }

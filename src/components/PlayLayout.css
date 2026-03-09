@@ -1,7 +1,7 @@
 .play-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #0f172a;
+  background-color: var(--dark-bg);
 }
 
 .play-content {
@@ -9,6 +9,12 @@
   padding: 2rem;
   overflow-y: auto;
   transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.play-content>*:not(.footer) {
+  flex: 1;
 }
 
 .play-content-full {
@@ -30,8 +36,9 @@
 .section-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #f8fafc;
+  color: var(--text-light);
   margin-bottom: 1.5rem;
+  font-family: 'Goldman', sans-serif;
 }
 
 .filter-controls {
@@ -45,18 +52,20 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background-color: #1e293b;
-  border: 1px solid #334155;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 0.5rem;
-  color: #cbd5e1;
+  color: var(--text-gray);
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'Tomorrow', sans-serif;
 }
 
 .filter-btn:hover {
-  background-color: #334155;
-  border-color: #475569;
+  background-color: var(--card-bg-alt);
+  border-color: rgba(245, 197, 24, 0.35);
+  color: var(--text-light);
 }
 
 .filter-btn svg {
@@ -89,6 +98,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -98,9 +108,8 @@
 .coming-soon-view h2 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #f8fafc;
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -108,7 +117,7 @@
 
 .coming-soon-view p {
   font-size: 1.25rem;
-  color: #94a3b8;
+  color: var(--text-gray);
 }
 
 /* Responsive adjustments */

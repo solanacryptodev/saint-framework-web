@@ -3,55 +3,73 @@ import { useLocation } from "@solidjs/router";
 export default function Nav() {
   const location = useLocation();
   const active = (path: string) =>
-    path == location.pathname ? "text-purple-400" : "text-white hover:text-purple-300";
+    path == location.pathname
+      ? "gold-gradient-text font-semibold"
+      : "text-slate-300 hover:text-yellow-300 transition-colors";
+
   return (
-    <nav class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-sm border-b-2 border-pink-500">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16 relative">
-          {/* Logo - Mobile/Tablet (left aligned) */}
-          <div class="flex-shrink-0 lg:hidden">
-            <a href="/">
-              <img src="/logo.ico" alt="Saint Framework Logo" class="h-10 w-10" />
-            </a>
-          </div>
-          
-          {/* Logo - Desktop (centered, overlapping) */}
-          <div class="hidden lg:block absolute left-1/2 -translate-x-1/2 top-16 -translate-y-1/2 border-2 border-pink-500">
-            <a href="/">
-              <img src="/logo.ico" alt="Saint Framework Logo" class="h-12 w-12" />
-            </a>
-          </div>
-          
-          {/* Navigation Links */}
-          <ul class="flex items-center space-x-4 sm:space-x-8">
-            <li>
-              <a href="/" class={`transition-colors ${active("/")}`}>
-                Home
+    /* Outer wrapper: provides top + side padding so the bar floats */
+    <div class="sticky top-0 z-50 px-4 sm:px-6 lg:px-10 pt-3 pb-1">
+      <nav
+        class="backdrop-blur-md"
+        style={{
+          background: "rgba(8, 12, 20, 0.72)",
+          border: "1px solid rgba(245, 197, 24, 0.22)",
+          "border-radius": "14px",
+          "box-shadow": "0 4px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(245,197,24,0.06) inset",
+        }}
+      >
+        <div class="px-4 sm:px-6">
+          <div class="flex items-center justify-between h-14">
+            {/* Logo */}
+            <div class="flex-shrink-0 flex items-center gap-2">
+              <a href="/">
+                <img src="/logo.ico" alt="Saint Framework Logo" class="h-8 w-8" />
               </a>
-            </li>
-            <li>
-              <a href="/about" class={`transition-colors ${active("/about")}`}>
-                About
+              <a href="/" class="hidden sm:block">
+                <span
+                  class="font-bold text-sm tracking-widest uppercase"
+                  style={{ color: "#f5c518", "font-family": "'Goldman', sans-serif" }}
+                >
+                  SAINT
+                </span>
               </a>
-            </li>
-            <li>
-              <a href="/play" class={`transition-colors ${active("/play")}`}>
-                Play
-              </a>
-            </li>
-            <li>
-              <a href="/create" class={`transition-colors ${active("/create")}`}>
-                Create
-              </a>
-            </li>
-            <li>
-              <a href="/join" class={`transition-colors ${active("/join")}`}>
+            </div>
+
+            {/* Navigation Links */}
+            <ul class="flex items-center space-x-5 sm:space-x-7">
+              <li>
+                <a href="/" class={`text-sm ${active("/")}`}>Home</a>
+              </li>
+              <li>
+                <a href="/about" class={`text-sm ${active("/about")}`}>About</a>
+              </li>
+              <li>
+                <a href="/play" class={`text-sm ${active("/play")}`}>Play</a>
+              </li>
+              <li>
+                <a href="/create" class={`text-sm ${active("/create")}`}>Create</a>
+              </li>
+            </ul>
+
+            {/* CTA Buttons */}
+            <div class="flex items-center gap-2">
+              <a
+                href="/join"
+                class="btn-ghost hidden sm:inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium"
+              >
                 Join
               </a>
-            </li>
-          </ul>
+              <a
+                href="/play"
+                class="btn-gold inline-flex items-center px-5 py-1.5 rounded-full text-sm font-bold"
+              >
+                Play Now
+              </a>
+            </div>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

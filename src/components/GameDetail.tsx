@@ -8,18 +8,45 @@ export default function GameDetail() {
   const [activeTab, setActiveTab] = createSignal<'overview' | 'analytics' | 'requirements'>('overview');
   const [currentImageIndex, setCurrentImageIndex] = createSignal(0);
 
-  // Mock game data - in a real app, this would be fetched based on params.gameTitle
+  // Get game title from URL params (temporary solution - will come from database)
+  const getGameTitle = () => {
+    const paramTitle = params.gameTitle;
+    if (!paramTitle) return 'Aetherium Core';
+    // Format: replace hyphens with spaces and capitalize words
+    return paramTitle
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Mock game data matching the target design
   const gameData = {
-    title: params.gameTitle?.replace(/-/g, ' ') || 'Game Title',
-    description: 'Navigate the neon-lit streets of a cyberpunk future where AI and humanity merge.',
-    developer: 'NeonCode Interactive',
-    rating: 4.6,
-    reviews: 156,
-    releaseDate: '2/19/2024',
-    tags: ['Cyberpunk', 'Hacking', 'Futuristic', 'Action'],
-    isFree: true,
-    price: 19.99,
-    images: ['/placeholder1.jpg', '/placeholder2.jpg', '/placeholder3.jpg']
+    title: getGameTitle(),
+    description: 'Navigate the neon-lit sectors of a futuristic galaxy where AI and humanity merge in an epic struggle for the ultimate cosmic power.',
+    developer: 'Nebula Studios',
+    rating: 4.8,
+    reviews: 1024,
+    releaseDate: '10/14/2024',
+    tags: ['Sci-Fi', 'Cyberpunk', 'Exploration', 'Action'],
+    isFree: false,
+    price: 29.99,
+    players: 4092,
+    swarmSize: 500,
+    genre: 'Sci-Fi MMO',
+    images: ['/placeholder1.jpg', '/placeholder2.jpg', '/placeholder3.jpg'],
+    features: [
+      'Procedurally generated star systems',
+      'Deep ship and crew customization',
+      'Dynamic real-time galactic economy',
+      'Cross-platform multiplayer combat'
+    ],
+    updates: [
+      {
+        version: 'Version 2.4.1',
+        date: '11/02/2024',
+        description: 'Added new asteroid mining lasers, expanded the neon nebula sector, and resolved hyperdrive stuttering issues.'
+      }
+    ]
   };
 
   const handleBackToGames = () => {
@@ -38,8 +65,8 @@ export default function GameDetail() {
     <div class="game-detail">
       {/* Back Button */}
       <button class="back-to-games" onClick={handleBackToGames}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Back to Games
       </button>
@@ -48,37 +75,30 @@ export default function GameDetail() {
       <div class="game-detail-header">
         <div class="game-title-section">
           <h1 class="game-detail-title">{gameData.title}</h1>
-          <Show when={gameData.isFree}>
-            <span class="free-badge">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 12v10H4V12h16zm0-2H4V7h16v3zm-8 6h6v-2h-6v2zm0 3h6v-2h-6v2zm-4-3h2v-2H8v2zm0 3h2v-2H8v2zM4 3h16a2 2 0 0 1 2 2v1H2V5a2 2 0 0 1 2-2z"/>
-              </svg>
-              FREE TO PLAY
-            </span>
-          </Show>
           <p class="game-subtitle">{gameData.description}</p>
         </div>
 
         <div class="game-meta-info">
           <div class="meta-row">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-width="2"/>
-              <circle cx="12" cy="7" r="4" stroke-width="2"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-width="2" />
+              <circle cx="12" cy="7" r="4" stroke-width="2" />
             </svg>
             <span>By {gameData.developer}</span>
           </div>
           <div class="meta-row">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
-            <span>{gameData.rating} ({gameData.reviews} reviews)</span>
+            <span class="rating">{gameData.rating}</span>
+            <span>({gameData.reviews.toLocaleString()} reviews)</span>
           </div>
           <div class="meta-row">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2"/>
-              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
-              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
-              <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2" />
+              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2" />
+              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2" />
+              <line x1="3" y1="10" x2="21" y2="10" stroke-width="2" />
             </svg>
             <span>{gameData.releaseDate}</span>
           </div>
@@ -97,12 +117,12 @@ export default function GameDetail() {
           <div class="carousel-placeholder"></div>
           <button class="carousel-btn prev" onClick={prevImage}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
           <button class="carousel-btn next" onClick={nextImage}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </button>
         </div>
@@ -120,35 +140,98 @@ export default function GameDetail() {
         </div>
       </div>
 
-      {/* Sidebar with price/action buttons */}
-      <div class="game-sidebar-info">
-        <Show
-          when={gameData.isFree}
-          fallback={
-            <>
-              <div class="price-section">
-                <div class="price">${gameData.price}</div>
-                <div class="price-label">One-time purchase</div>
-              </div>
-              <button class="buy-now-btn">Buy Now</button>
-            </>
-          }
-        >
-          <div class="free-section">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 12v10H4V12h16zm0-2H4V7h16v3zm-8 6h6v-2h-6v2zm0 3h6v-2h-6v2zm-4-3h2v-2H8v2zm0 3h2v-2H8v2zM4 3h16a2 2 0 0 1 2 2v1H2V5a2 2 0 0 1 2-2z"/>
+      {/* Right Sidebar - Actions, Game Info, Creator */}
+      <div class="game-sidebar-actions">
+        {/* Price/Action Card */}
+        <div class="action-card">
+          <Show
+            when={gameData.isFree}
+            fallback={
+              <>
+                <div class="price-section">
+                  <svg class="price-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <div class="price">${gameData.price}</div>
+                  <div class="price-label">One-time purchase</div>
+                </div>
+                <button class="buy-now-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  Buy Now
+                </button>
+              </>
+            }
+          >
+            <div class="free-section">
+              <svg class="price-icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 12v10H4V12h16zm0-2H4V7h16v3zm-8 6h6v-2h-6v2zm0 3h6v-2h-6v2zm-4-3h2v-2H8v2zm0 3h2v-2H8v2zM4 3h16a2 2 0 0 1 2 2v1H2V5a2 2 0 0 1 2-2z" />
+              </svg>
+              <div class="free-title">FREE TO PLAY</div>
+              <div class="free-subtitle">No purchase required</div>
+            </div>
+            <button class="play-now-btn">Play Now</button>
+          </Show>
+          <button class="wishlist-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-width="2" />
             </svg>
-            <div class="free-title">FREE TO PLAY</div>
-            <div class="free-subtitle">No purchase required</div>
+            Add to Wishlist
+          </button>
+        </div>
+
+        {/* Game Info Card */}
+        <div class="game-info-card">
+          <h3>Game Info</h3>
+          <div class="info-row">
+            <span>Players:</span>
+            <span>{gameData.players.toLocaleString()}</span>
           </div>
-          <button class="play-now-btn">Play Now</button>
-        </Show>
-        <button class="wishlist-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-width="2"/>
-          </svg>
-          Add to Wishlist
-        </button>
+          <div class="info-row">
+            <span>Swarm Size:</span>
+            <span>{gameData.swarmSize}</span>
+          </div>
+          <div class="info-row">
+            <span>Genre:</span>
+            <span>{gameData.genre}</span>
+          </div>
+          <div class="info-row">
+            <span>Rating:</span>
+            <span class="rating">{gameData.rating} ★</span>
+          </div>
+          <div class="info-row">
+            <span>Reviews:</span>
+            <span>{gameData.reviews.toLocaleString()}</span>
+          </div>
+          <div class="info-row">
+            <span>Release Date:</span>
+            <span>{gameData.releaseDate}</span>
+          </div>
+        </div>
+
+        {/* Creator Card */}
+        <div class="creator-card">
+          <h3>Creator</h3>
+          <div class="creator-info">
+            <div class="creator-avatar">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div class="creator-details">
+              <div class="creator-name">{gameData.developer}</div>
+              <div class="creator-role">Game Developer</div>
+            </div>
+          </div>
+          <button class="follow-creator-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Follow Creator
+          </button>
+        </div>
       </div>
 
       {/* Tabs Navigation */}
@@ -158,8 +241,8 @@ export default function GameDetail() {
           onClick={() => setActiveTab('overview')}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10" stroke-width="2"/>
-            <path d="M12 16v-4M12 8h.01" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="10" stroke-width="2" />
+            <path d="M12 16v-4M12 8h.01" stroke-width="2" stroke-linecap="round" />
           </svg>
           Overview
         </button>
@@ -168,8 +251,8 @@ export default function GameDetail() {
           onClick={() => setActiveTab('analytics')}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M3 3v18h18" stroke-width="2" stroke-linecap="round"/>
-            <path d="M18 17V9M13 17v-6M8 17v-3" stroke-width="2" stroke-linecap="round"/>
+            <path d="M3 3v18h18" stroke-width="2" stroke-linecap="round" />
+            <path d="M18 17V9M13 17v-6M8 17v-3" stroke-width="2" stroke-linecap="round" />
           </svg>
           Analytics
         </button>
@@ -178,8 +261,8 @@ export default function GameDetail() {
           onClick={() => setActiveTab('requirements')}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/>
-            <path d="M8 21h8M12 17v4" stroke-width="2" stroke-linecap="round"/>
+            <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2" />
+            <path d="M8 21h8M12 17v4" stroke-width="2" stroke-linecap="round" />
           </svg>
           System Requirements
         </button>
@@ -191,51 +274,44 @@ export default function GameDetail() {
           <div class="overview-content">
             <h2>About This Game</h2>
             <p>
-              Command your own pirate ship across vast oceans filled with danger and adventure. Recruit a diverse crew, engage in epic
-              naval battles, explore mysterious islands, and search for the legendary treasure of Captain Blackwater. With dynamic weather
-              systems and realistic sailing mechanics, every voyage is unique.
+              Embark on a limitless journey across the cosmos. Pilot your vessel through treacherous
+              asteroid fields, engage in tactical fleet battles, and uncover the mysteries of the
+              Aetherium Core. With fully customizable ships and a dynamic player-driven economy, your
+              destiny among the stars is yours to forge. Will you become a legendary explorer, a ruthless
+              corporate mercenary, or a feared pirate of the neon nebula?
             </p>
 
             <div class="features-updates">
               <div class="features-section">
                 <h3>Game Features</h3>
                 <ul>
-                  <li>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                    Immersive storyline with multiple endings
-                  </li>
-                  <li>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                    Advanced character customization
-                  </li>
-                  <li>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                    Dynamic weather and day/night cycle
-                  </li>
-                  <li>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                    </svg>
-                    Cross-platform multiplayer support
-                  </li>
+                  <For each={gameData.features}>
+                    {(feature) => (
+                      <li>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                          <polyline points="22 4 12 14.01 9 11.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        {feature}
+                      </li>
+                    )}
+                  </For>
                 </ul>
               </div>
 
               <div class="updates-section">
                 <h3>Recent Updates</h3>
-                <div class="update-item">
-                  <div class="update-header">
-                    <span class="update-version">Version 2.1.4</span>
-                    <span class="update-date">2/27/2024</span>
-                  </div>
-                  <p class="update-description">Bug fixes and performance improvements</p>
-                </div>
+                <For each={gameData.updates}>
+                  {(update) => (
+                    <div class="update-item">
+                      <div class="update-header">
+                        <span class="update-version">{update.version}</span>
+                        <span class="update-date">{update.date}</span>
+                      </div>
+                      <p class="update-description">{update.description}</p>
+                    </div>
+                  )}
+                </For>
               </div>
             </div>
           </div>
@@ -246,32 +322,32 @@ export default function GameDetail() {
             <h2>Game Analytics</h2>
             <div class="analytics-grid">
               <div class="analytics-card">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2"/>
-                  <circle cx="9" cy="7" r="4" stroke-width="2"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2"/>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2" />
+                  <circle cx="9" cy="7" r="4" stroke-width="2" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" />
                 </svg>
                 <div class="analytics-value">3,892</div>
                 <div class="analytics-label">Peak Players</div>
               </div>
               <div class="analytics-card">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                  <path d="M12 6v6l4 2" stroke-width="2"/>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" stroke-width="2" />
+                  <path d="M12 6v6l4 2" stroke-width="2" />
                 </svg>
                 <div class="analytics-value">56.7 hours</div>
                 <div class="analytics-label">Avg. Playtime</div>
               </div>
               <div class="analytics-card">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
                 <div class="analytics-value">82%</div>
                 <div class="analytics-label">Completion Rate</div>
               </div>
               <div class="analytics-card">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                 </svg>
                 <div class="analytics-value">4.7</div>
                 <div class="analytics-label">User Rating</div>
@@ -321,8 +397,8 @@ export default function GameDetail() {
               <div class="requirements-card">
                 <div class="requirements-header">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2"/>
-                    <path d="M8 21h8M12 17v4" stroke-width="2"/>
+                    <rect x="2" y="3" width="20" height="14" rx="2" stroke-width="2" />
+                    <path d="M8 21h8M12 17v4" stroke-width="2" stroke-linecap="round" />
                   </svg>
                   <h3>Minimum Requirements</h3>
                 </div>
@@ -348,7 +424,7 @@ export default function GameDetail() {
               <div class="requirements-card">
                 <div class="requirements-header">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                   <h3>Recommended Requirements</h3>
                 </div>
@@ -373,59 +449,6 @@ export default function GameDetail() {
             </div>
           </div>
         </Show>
-      </div>
-
-      {/* Game Info Sidebar (right side) */}
-      <div class="game-info-sidebar">
-        <div class="info-section">
-          <h3>Game Info</h3>
-          <div class="info-row">
-            <span>Players:</span>
-            <span>2,156</span>
-          </div>
-          <div class="info-row">
-            <span>Swarm Size:</span>
-            <span>300</span>
-          </div>
-          <div class="info-row">
-            <span>Genre:</span>
-            <span>Adventure</span>
-          </div>
-          <div class="info-row">
-            <span>Rating:</span>
-            <span>4.7 ⭐</span>
-          </div>
-          <div class="info-row">
-            <span>Reviews:</span>
-            <span>428</span>
-          </div>
-          <div class="info-row">
-            <span>Release Date:</span>
-            <span>1/7/2024</span>
-          </div>
-        </div>
-
-        <div class="creator-section">
-          <h3>Creator</h3>
-          <div class="creator-info">
-            <div class="creator-avatar">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </div>
-            <div class="creator-details">
-              <div class="creator-name">Seafaring Games</div>
-              <div class="creator-role">Game Developer</div>
-            </div>
-          </div>
-          <button class="follow-creator-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            Follow Creator
-          </button>
-        </div>
       </div>
     </div>
   );
