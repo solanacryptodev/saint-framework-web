@@ -82,12 +82,13 @@ const popularGames: GameCardData[] = [
 const newGames: GameCardData[] = [
   {
     id: '8',
-    title: 'Cyber Chronicles 2087',
-    created: '2/19/2024',
-    players: 892,
-    swarmSize: 200,
-    genre: 'Sci-Fi',
-    isFree: true,
+    title: 'The Serpent and The Spy',
+    created: '3/19/2026',
+    players: 0,
+    swarmSize: 0,
+    genre: 'Spy Thriller',
+    price: 2.00,
+    isFree: false,
     isNew: true
   },
   {

@@ -11,7 +11,9 @@
     "@aws-sdk/s3-request-presigner": "^3.929.0",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.1.0",
+    "@tanstack/solid-query": "^5.90.23",
     "solid-js": "^1.9.5",
+    "surrealdb": "^2.0.2",
     "vinxi": "^0.5.7"
   },
   "devDependencies": {

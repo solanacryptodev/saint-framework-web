@@ -771,6 +771,50 @@
   color: var(--text-light);
 }
 
+/* Gameplay Wrapper */
+.gameplay-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, rgba(8, 12, 20, 1) 0%, rgba(13, 21, 37, 1) 50%, rgba(8, 12, 20, 1) 100%);
+}
+
+.back-to-game {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(100, 200, 255, 0.1);
+  border: 1px solid rgba(100, 200, 255, 0.2);
+  color: rgba(100, 200, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-family: 'Tomorrow', sans-serif;
+}
+
+.back-to-game:hover {
+  background: rgba(100, 200, 255, 0.2);
+  border-color: rgba(100, 200, 255, 0.4);
+  color: rgba(100, 200, 255, 0.95);
+}
+
+.back-to-game svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .game-detail {
