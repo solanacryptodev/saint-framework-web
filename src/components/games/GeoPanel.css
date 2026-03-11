@@ -1,0 +1,261 @@
+.geo-panel {
+    background: linear-gradient(180deg, rgba(13, 21, 37, 0.95) 0%, rgba(8, 12, 20, 0.98) 100%);
+    border: 1px solid rgba(100, 200, 255, 0.15);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    height: 100%;
+    font-family: 'Tomorrow', sans-serif;
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.section-header span {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: rgba(100, 200, 255, 0.5);
+    font-weight: 600;
+}
+
+.section-header svg {
+    color: rgba(100, 200, 255, 0.4);
+}
+
+/* Panel Divider */
+.panel-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(100, 200, 255, 0.2) 50%, transparent 100%);
+}
+
+/* Geo Data Section */
+.geo-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.geo-image {
+    width: 100%;
+    height: 140px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(100, 200, 255, 0.2);
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, rgba(100, 200, 255, 0.05) 0%, rgba(50, 150, 200, 0.02) 100%);
+}
+
+.geo-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.geo-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(100, 200, 255, 0.3);
+    background: linear-gradient(135deg, rgba(100, 200, 255, 0.05) 0%, rgba(20, 40, 60, 0.3) 100%);
+}
+
+.geo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.geo-title {
+    font-family: 'Goldman', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(200, 230, 255, 0.9);
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.geo-description {
+    font-size: 0.8rem;
+    color: rgba(150, 180, 210, 0.6);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Proximity Scan Section */
+.proximity-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.proximity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.proximity-header span:first-child {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: rgba(100, 200, 255, 0.5);
+    font-weight: 600;
+}
+
+.proximity-count {
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.9rem;
+    color: rgba(100, 200, 255, 0.8);
+    font-weight: 600;
+}
+
+.alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.alert-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(100, 200, 255, 0.05);
+    border: 1px solid rgba(100, 200, 255, 0.1);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.alert-item:hover {
+    background: rgba(100, 200, 255, 0.08);
+    border-color: rgba(100, 200, 255, 0.2);
+}
+
+.alert-item.warning {
+    border-left: 3px solid rgba(255, 180, 100, 0.6);
+}
+
+.alert-item.danger {
+    border-left: 3px solid rgba(255, 100, 100, 0.6);
+}
+
+.alert-item.info {
+    border-left: 3px solid rgba(100, 200, 255, 0.6);
+}
+
+.alert-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(100, 200, 255, 0.1);
+    border-radius: 6px;
+    color: rgba(100, 200, 255, 0.7);
+    flex-shrink: 0;
+}
+
+.alert-item.warning .alert-icon {
+    background: rgba(255, 180, 100, 0.1);
+    color: rgba(255, 180, 100, 0.8);
+}
+
+.alert-item.danger .alert-icon {
+    background: rgba(255, 100, 100, 0.1);
+    color: rgba(255, 100, 100, 0.8);
+}
+
+.alert-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.alert-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(200, 230, 255, 0.9);
+}
+
+.alert-status {
+    font-size: 0.7rem;
+    color: rgba(100, 200, 255, 0.5);
+    letter-spacing: 0.05em;
+}
+
+.alert-indicator {
+    color: rgba(255, 180, 100, 0.6);
+    flex-shrink: 0;
+}
+
+/* Data Cache Section */
+.cache-section {
+    margin-top: auto;
+}
+
+.cache-grid {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: space-between;
+}
+
+.cache-item {
+    flex: 1;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(100, 200, 255, 0.05);
+    border: 1px solid rgba(100, 200, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(100, 200, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cache-item:hover {
+    background: rgba(100, 200, 255, 0.08);
+    border-color: rgba(100, 200, 255, 0.2);
+    color: rgba(100, 200, 255, 0.5);
+}
+
+.cache-item.active {
+    background: rgba(100, 200, 255, 0.12);
+    border-color: rgba(100, 200, 255, 0.3);
+    color: rgba(100, 200, 255, 0.8);
+    box-shadow: 0 0 12px rgba(100, 200, 255, 0.15);
+}
+
+.cache-item.active:hover {
+    background: rgba(100, 200, 255, 0.15);
+    border-color: rgba(100, 200, 255, 0.4);
+    box-shadow: 0 0 16px rgba(100, 200, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .geo-panel {
+        padding: 1rem;
+    }
+
+    .geo-image {
+        height: 120px;
+    }
+
+    .cache-grid {
+        gap: 0.375rem;
+    }
+
+    .cache-item svg {
+        width: 20px;
+        height: 20px;
+    }
+}
