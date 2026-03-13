@@ -1,0 +1,185 @@
+/* Reviews Container */
+.reviews-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+/* Reviews Header */
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.reviews-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--gold-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: 'Tomorrow', sans-serif;
+}
+
+.add-review-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1.5px solid var(--gold-primary);
+    color: var(--gold-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: 'Tomorrow', sans-serif;
+}
+
+.add-review-btn:hover {
+    background: rgba(245, 197, 24, 0.1);
+    border-color: var(--gold-light);
+    color: var(--gold-light);
+}
+
+.add-review-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Reviews List */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Review Card */
+.review-card {
+    background: var(--darker-bg);
+    padding: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.review-card:hover {
+    border-color: rgba(245, 197, 24, 0.3);
+}
+
+/* Review Header */
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+/* Player Info */
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.player-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--card-bg-alt);
+    border: 2px solid var(--gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.player-avatar svg {
+    color: var(--gold-primary);
+    width: 24px;
+    height: 24px;
+}
+
+/* Player Details */
+.player-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.player-name {
+    font-weight: 700;
+    color: var(--text-light);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* Player Rating (Stars underneath name) */
+.player-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.star {
+    width: 16px;
+    height: 16px;
+}
+
+.star.filled {
+    color: var(--gold-primary);
+}
+
+.star.half {
+    color: var(--gold-primary);
+}
+
+.star.empty {
+    color: var(--text-gray);
+    opacity: 0.5;
+}
+
+/* Review Date */
+.review-date {
+    color: var(--text-gray);
+    font-size: 0.8rem;
+    background: var(--card-bg-alt);
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+/* Review Text */
+.review-text {
+    color: var(--text-gray);
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .reviews-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .review-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .review-date {
+        align-self: flex-start;
+    }
+}

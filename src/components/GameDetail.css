@@ -128,11 +128,23 @@
   color: var(--gold-light);
 }
 
-/* Carousel */
-.game-carousel {
+/* Left Column Content - Wrapper for Carousel and Reviews */
+.left-column-content {
   grid-column: 1;
   grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Carousel */
+.game-carousel {
   margin-bottom: 0;
+}
+
+/* Reviews Section */
+.reviews-container {
+  margin-top: 0;
 }
 
 .carousel-image {
@@ -482,7 +494,7 @@
   grid-row: 4;
   display: flex;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.3rem;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -527,6 +539,7 @@
 /* Tab Content */
 .tab-content {
   grid-column: 1;
+  grid-row: 5;
 }
 
 .overview-content,
