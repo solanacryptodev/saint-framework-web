@@ -11,9 +11,12 @@ const Hero: Component<HeroProps> = (props) => {
       <div
         class="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          "background-image": `url('/saint hero image.png')`,
+          "background-image": `url('/saint hero.png')`,
         }}
       >
+        {/* Slight dark overlay */}
+        <div class="absolute inset-0 bg-black/15" />
+
         {/* Dark overlay to make text readable */}
         <div
           class="absolute inset-0"
