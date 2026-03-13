@@ -1,7 +1,9 @@
 import { createSignal, Show, For } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import GeneralGame from './games/GeneralGame';
+import Reviews from './Reviews';
 import './GameDetail.css';
+import './Reviews.css';
 
 export default function GameDetail() {
   const params = useParams();
@@ -134,33 +136,39 @@ export default function GameDetail() {
           </div>
         </div>
 
-        {/* Image Carousel */}
-        <div class="game-carousel">
-          <div class="carousel-image">
-            <div class="carousel-placeholder"></div>
-            <button class="carousel-btn prev" onClick={prevImage}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
-            <button class="carousel-btn next" onClick={nextImage}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </button>
+        {/* Left Column Content - Carousel and Reviews */}
+        <div class="left-column-content">
+          {/* Image Carousel */}
+          <div class="game-carousel">
+            <div class="carousel-image">
+              <div class="carousel-placeholder"></div>
+              <button class="carousel-btn prev" onClick={prevImage}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <button class="carousel-btn next" onClick={nextImage}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+            <div class="carousel-thumbnails">
+              <For each={gameData.images}>
+                {(_, index) => (
+                  <div
+                    class={`thumbnail ${index() === currentImageIndex() ? 'active' : ''}`}
+                    onClick={() => setCurrentImageIndex(index())}
+                  >
+                    <div class="thumbnail-placeholder"></div>
+                  </div>
+                )}
+              </For>
+            </div>
           </div>
-          <div class="carousel-thumbnails">
-            <For each={gameData.images}>
-              {(_, index) => (
-                <div
-                  class={`thumbnail ${index() === currentImageIndex() ? 'active' : ''}`}
-                  onClick={() => setCurrentImageIndex(index())}
-                >
-                  <div class="thumbnail-placeholder"></div>
-                </div>
-              )}
-            </For>
-          </div>
+
+          {/* Reviews Section */}
+          <Reviews />
         </div>
 
         {/* Right Sidebar - Actions, Game Info, Creator */}
