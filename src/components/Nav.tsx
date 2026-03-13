@@ -61,10 +61,10 @@ export default function Nav() {
                 Join
               </a>
               <a
-                href="/play"
+                href="/player"
                 class="btn-gold inline-flex items-center px-5 py-1.5 rounded-full text-sm font-bold"
               >
-                Play Now
+                Login
               </a>
             </div>
           </div>
