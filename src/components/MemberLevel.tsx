@@ -1,74 +1,90 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
+import type { PlayerTier } from "~/libs/auth";
 
-interface MemberLevelProps {
+interface TierConfig {
+  id: PlayerTier;
   title: string;
   price: string;
   description: string;
   features: string[];
   isPopular?: boolean;
   isComingSoon?: boolean;
-  isSelected?: boolean;
-  onSelect?: () => void;
+}
+
+interface MemberLevelProps {
+  tier: TierConfig;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
 export default function MemberLevel(props: MemberLevelProps) {
+  const t = props.tier;
+  const selectedColor = !t.isComingSoon ? "border-yellow-500" : "border-purple-500";
+  const selectedBg = !t.isComingSoon ? "bg-yellow-500/5" : "bg-purple-500/5";
+
   return (
-    <div
-      class={`relative border-2 rounded-xl p-6 transition-all duration-300 ${props.isSelected
-          ? 'border-yellow-500 bg-yellow-500/10'
-          : 'border-slate-700 hover:border-yellow-500/50'
-        }`}
+    <button
+      type="button"
       onClick={props.onSelect}
-      style={{ cursor: props.onSelect ? 'pointer' : 'default' }}
+      disabled={t.isComingSoon}
+      class={[
+        "w-full text-left rounded-xl border p-6 transition-all duration-200 relative",
+        "disabled:cursor-not-allowed disabled:opacity-60",
+        props.isSelected
+          ? `${selectedColor} ${selectedBg}`
+          : "border-slate-700 bg-slate-800/30 hover:border-slate-500",
+      ].join(" ")}
     >
-      {/* Popular Badge */}
-      {props.isPopular && (
-        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <span class="bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-sm font-semibold px-4 py-1 rounded-full">
+      {/* Badges */}
+      <Show when={t.isPopular}>
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+          <span class="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full">
             Most Popular
           </span>
         </div>
-      )}
-
-      {/* Coming Soon Badge */}
-      {props.isComingSoon && (
-        <div class="absolute -top-3 right-6">
-          <span class="bg-yellow-500 text-slate-900 text-sm font-semibold px-4 py-1 rounded-full">
+      </Show>
+      <Show when={t.isComingSoon}>
+        <div class="absolute -top-3 right-4">
+          <span class="bg-slate-600 text-slate-300 text-xs font-bold px-3 py-1 rounded-full">
             Coming Soon
           </span>
         </div>
-      )}
+      </Show>
 
       {/* Header */}
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
-          <div class={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${props.isSelected ? 'border-yellow-500 bg-yellow-500' : 'border-slate-500'
-            }`}>
-            {props.isSelected && (
-              <div class="w-3 h-3 bg-white rounded-full"></div>
-            )}
-          </div>
-          <h3 class="text-2xl font-bold text-white">{props.title}</h3>
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <h3 class="text-white font-bold text-xl">{t.title}</h3>
+          <p class="text-slate-400 text-sm mt-1">{t.description}</p>
         </div>
-        <div class="text-3xl font-bold text-yellow-500">{props.price}</div>
+        <div class="text-right ml-4 flex-shrink-0">
+          <div class={`text-2xl font-bold ${!t.isComingSoon ? "text-yellow-400" : "text-white"}`}>
+            {t.price}
+          </div>
+          <Show when={t.price !== "$0"}>
+            <div class="text-slate-500 text-xs">/month</div>
+          </Show>
+        </div>
       </div>
 
-      {/* Description */}
-      <p class="text-slate-300 mb-6">{props.description}</p>
-
       {/* Features */}
-      <ul class="space-y-3">
-        <For each={props.features}>
+      <ul class="space-y-2">
+        <For each={t.features}>
           {(feature) => (
-            <li class="flex items-start gap-3">
-              <svg class="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span class="text-slate-300">{feature}</span>
+            <li class="flex items-center gap-2 text-slate-300 text-sm">
+              <span class={!t.isComingSoon ? "text-yellow-400" : "text-purple-400"}>✓</span>
+              {feature}
             </li>
           )}
         </For>
       </ul>
-    </div>
+
+      {/* Selection indicator */}
+      <Show when={props.isSelected}>
+        <div class={`mt-4 text-center text-sm font-semibold ${!t.isComingSoon ? "text-yellow-400" : "text-purple-400"}`}>
+          ✦ Selected
+        </div>
+      </Show>
+    </button>
   );
 }

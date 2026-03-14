@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.929.0",
