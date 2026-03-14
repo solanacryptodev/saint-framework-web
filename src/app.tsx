@@ -1,9 +1,21 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { AuthProvider } from "~/libs/AuthProvider";
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
-import { Suspense, createSignal, createEffect } from "solid-js";
-import { useNavigate, useLocation } from "@solidjs/router";
+import { Suspense } from "solid-js";
+import { useLocation } from "@solidjs/router";
 import Nav from "~/components/Nav";
 import "./app.css";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 30,    // 30s before background refetch
+      gcTime: 1000 * 60 * 5, // 5min in cache after unmount
+      retry: 1,
+    },
+  },
+});
 
 // Nav visibility wrapper component that can use router hooks
 function NavWrapper(props: { children: any }) {
@@ -26,14 +38,18 @@ function NavWrapper(props: { children: any }) {
 
 export default function App() {
   return (
-    <Router
-      root={props => (
-        <Suspense>
-          <NavWrapper>{props.children}</NavWrapper>
-        </Suspense>
-      )}
-    >
-      <FileRoutes />
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router
+          root={props => (
+            <Suspense>
+              <NavWrapper>{props.children}</NavWrapper>
+            </Suspense>
+          )}
+        >
+          <FileRoutes />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

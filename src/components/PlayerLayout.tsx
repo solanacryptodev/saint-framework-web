@@ -1,5 +1,7 @@
 import { createSignal, For } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import './PlayerLayout.css';
+import { useAuth } from '~/libs/AuthProvider';
 
 interface GameProgress {
     id: string;
@@ -59,6 +61,15 @@ const purchasedGames: PurchasedGame[] = [
 
 export default function PlayerLayout() {
     const [activeSection, setActiveSection] = createSignal('profile');
+    const { player, signout } = useAuth();
+    const navigate = useNavigate();
+
+    // Extract year from created_at for "Member since" display
+    const memberSinceYear = () => {
+        const createdAt = player()?.created_at;
+        if (!createdAt) return 'N/A';
+        return new Date(createdAt).getFullYear();
+    };
 
     return (
         <div class="player-layout">
@@ -124,6 +135,20 @@ export default function PlayerLayout() {
                         </button>
                     </nav>
                 </div>
+
+                <div class="sidebar-footer">
+                    <button class="nav-item signout-btn" onClick={() => {
+                        signout();
+                        navigate("/");
+                    }}>
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <polyline points="16 17 21 12 16 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <line x1="21" y1="12" x2="9" y2="12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Sign Out</span>
+                    </button>
+                </div>
             </aside>
 
             {/* Main Content */}
@@ -142,8 +167,8 @@ export default function PlayerLayout() {
 
                         <div class="profile-details">
                             <div class="username-section">
-                                <h1 class="username">AlexVance_99</h1>
-                                <p class="member-info">Member since 2022 • Level 42</p>
+                                <h1 class="username">{player()?.display_name ?? 'Guest'}</h1>
+                                <p class="member-info">Member since {memberSinceYear()} • Level 42</p>
                             </div>
 
                             <div class="profile-actions">

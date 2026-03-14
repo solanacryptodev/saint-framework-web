@@ -52,6 +52,29 @@
     padding: 0 0.5rem;
 }
 
+.sidebar-footer {
+    margin-top: auto;
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.signout-btn {
+    color: #ef4444 !important;
+}
+
+.signout-btn:hover {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #f87171 !important;
+}
+
+.signout-btn svg {
+    color: #ef4444;
+}
+
+.signout-btn:hover svg {
+    color: #f87171;
+}
+
 .nav-item {
     display: flex;
     align-items: center;
