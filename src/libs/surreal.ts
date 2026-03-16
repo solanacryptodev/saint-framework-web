@@ -1,4 +1,5 @@
 "use server";
+
 // src/lib/surreal.ts
 //
 // Server-only SurrealDB client — root connection used by all Mastra agents
@@ -37,6 +38,19 @@
 
 import { Surreal, Table, Values } from "surrealdb";
 import { applyAuthSchema } from "./auth";
+import type {
+    WorldActor,
+    WorldLocation,
+    WorldItem,
+    WorldThread,
+    WorldSnapshot,
+    WorldImpact,
+    LoreNode,
+    LoreContext,
+    LoreEvent,
+    AgentDefinition,
+    NarrativeEvent
+} from "./types";
 
 // ── Environment variable helper ─────────────────────────────────────────────
 // Trims whitespace/newlines that can cause authentication failures
@@ -375,6 +389,31 @@ export async function updateThreadTension(
     );
 }
 
+/** 
+ * Upsert a named state blob into world_thread.
+ * Used by agents via the update_world_state tool, and by the orchestrator
+ * to checkpoint beat state between generate and choose steps.
+ */
+export async function upsertWorldState(
+    sessionId: string,
+    kind: string,
+    name: string,
+    payload: Record<string, unknown>
+) {
+    const db = await getDB();
+    return db.query(`
+    UPSERT world_thread
+    SET session_id = $sid,
+        name        = $name,
+        description = $name,
+        state       = $payload,
+        active      = true
+    WHERE name       = $name
+      AND session_id = $sid
+  `, { sid: sessionId, name, payload: { ...payload, kind } });
+}
+
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ACE SYSTEM HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -402,149 +441,4 @@ export async function logNarrativeEvent(
 ) {
     const db = await getDB();
     return db.create(new Table("narrative_event")).content(event);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════
-
-// ── Lore Graph ───────────────────────────────────────────────────────────
-
-export interface LoreNode {
-    id: string;
-    kind: "character" | "faction" | "location" | "item" | "event" | "concept";
-    name: string;
-    description: string;
-    properties: Record<string, unknown>;
-    canon: boolean;
-    related_out?: Pick<LoreNode, "id" | "kind" | "name">[];
-    related_in?: Pick<LoreNode, "id" | "kind" | "name">[];
-}
-
-export interface LoreContext {
-    root: LoreNode;
-    depth: number;
-}
-
-export interface LoreEvent {
-    id?: string;
-    session_id: string;
-    turn_number: number;
-    event_kind:
-    | "decision"
-    | "consequence"
-    | "revelation"
-    | "relationship_change"
-    | "item_transfer"
-    | "location_entered";
-    description: string;
-    actors: string[];
-    locations: string[];
-    items: string[];
-    consequences: string[];
-    player_choice?: string;
-    created_at?: string;
-}
-
-// ── World Graph ───────────────────────────────────────────────────────────
-
-export interface WorldActor {
-    id: string;
-    lore_ref: string;
-    name: string;
-    kind: "player" | "npc" | "faction_rep";
-    location_id: string;
-    disposition: "hostile" | "neutral" | "friendly" | "unknown";
-    awareness: "unaware" | "suspicious" | "alerted" | "hostile" | "allied";
-    goal_current: string;
-    goal_hidden: string;
-    state: Record<string, unknown>;
-    active: boolean;
-}
-
-export interface WorldLocation {
-    id: string;
-    lore_ref: string;
-    name: string;
-    region: string;
-    accessible: boolean;
-    danger_level: number;
-    atmosphere: string;
-    secrets: string[];
-    revealed_secrets: string[];
-    state: Record<string, unknown>;
-}
-
-export interface WorldItem {
-    id: string;
-    lore_ref: string;
-    name: string;
-    holder_actor?: string;
-    location_id?: string;
-    accessible: boolean;
-    known_to_player: boolean;
-    condition: string;
-    state: Record<string, unknown>;
-}
-
-export interface WorldThread {
-    id: string;
-    session_id: string;
-    name: string;
-    description: string;
-    tension: number;
-    urgency: number;
-    active: boolean;
-    turn_opened: number;
-    turn_resolved?: number;
-    involved_actors: string[];
-    involved_locations: string[];
-    consequence_seeds: string[];
-}
-
-export interface WorldSnapshot {
-    actors: WorldActor[];
-    locations: WorldLocation[];
-    items: WorldItem[];
-    threads: WorldThread[];
-    snapshotAt: string;
-}
-
-export interface WorldImpact {
-    actorDeltas: Record<string, Record<string, unknown>>;
-    locationDeltas: Record<string, Record<string, unknown>>;
-    itemDeltas: Record<string, Record<string, unknown>>;
-    newEdges: Array<{
-        from: string;
-        to: string;
-        type: string;
-        weight?: number;
-        metadata?: Record<string, unknown>;
-    }>;
-    newThreads: Partial<WorldThread>[];
-    consequenceSeeds: string[];
-    narrativePressure: number;
-}
-
-// ── ACE System ────────────────────────────────────────────────────────────
-
-export interface AgentDefinition {
-    id?: string;
-    name: string;
-    role: "generator" | "curator" | "reflector" | "swarm" | "hero";
-    instructions: string;
-    model?: string;
-    tools?: string[];
-    active?: boolean;
-    metadata?: Record<string, unknown>;
-}
-
-export interface NarrativeEvent {
-    id?: string;
-    session_id: string;
-    agent_name: string;
-    event_type: "action" | "decision" | "outcome" | "reflection";
-    content: string;
-    metadata?: Record<string, unknown>;
-    created_at?: string;
 }

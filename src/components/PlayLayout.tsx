@@ -1,9 +1,7 @@
 import { createSignal, For, Show } from 'solid-js';
-import { useLocation } from '@solidjs/router';
 import GameSidebar from './GameSidebar';
 import Carousel from './Carousel';
 import GameCard, { type GameCardData } from './GameCard';
-import Footer from './Footer';
 import './PlayLayout.css';
 
 // Dummy game data
@@ -193,7 +191,6 @@ export default function PlayLayout() {
           </Show>
         </main>
       </div>
-      <Footer />
     </>
   );
 }

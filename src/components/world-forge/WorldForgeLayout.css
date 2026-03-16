@@ -1,0 +1,852 @@
+/* WorldForgeLayout.css */
+
+/* ── Keyframe Animations ─────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes entityPop {
+    from {
+        opacity: 0;
+        transform: scale(0.88);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes logFade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.35;
+    }
+}
+
+/* ── Global Styles ───────────────────────────────────────────────────────── */
+
+* {
+    box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+    width: 3px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 2px;
+}
+
+input:focus,
+textarea:focus {
+    border-color: #7c3aed !important;
+}
+
+textarea {
+    font-family: inherit;
+    outline: none;
+}
+
+/* ── Root ────────────────────────────────────────────────────────────────── */
+
+.wf-root {
+    font-family: 'Tomorrow', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    background: #020617;
+    color: #e2e8f0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.wf-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #0f172a;
+    background: rgba(2, 6, 23, 0.9);
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.wf-title {
+    font-family: 'Goldman', sans-serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: #ffffff;
+    margin: 0;
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+
+.wf-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    border-bottom: 1px solid #0f172a;
+    background: rgba(2, 6, 23, 0.9);
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.wf-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wf-nav-logo {
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    color: #e2e8f0;
+}
+
+.wf-nav-sep {
+    color: #1e293b;
+    font-size: 12px;
+}
+
+.wf-nav-crumb {
+    font-size: 12px;
+    color: #475569;
+}
+
+.wf-nav-player {
+    font-size: 10px;
+    color: #475569;
+}
+
+/* ── Upload Stage ────────────────────────────────────────────────────────── */
+
+.wf-upload-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    padding: 40px 20px;
+}
+
+.wf-upload-center {
+    width: 100%;
+    max-width: 560px;
+    text-align: center;
+}
+
+.wf-upload-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: #7c3aed;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+
+.wf-upload-title {
+    font-family: 'Goldman', sans-serif;
+    font-size: clamp(32px, 5vw, 58px);
+    font-weight: 400;
+    color: #f1f5f9;
+    line-height: 1.2;
+    margin-bottom: 14px;
+}
+
+.wf-upload-title-accent {
+    font-style: italic;
+    background: linear-gradient(135deg, #c084fc, #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.wf-upload-subtitle {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.wf-upload-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.wf-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.wf-label {
+    font-size: 10px;
+    color: #475569;
+    letter-spacing: 0.1em;
+}
+
+.wf-input {
+    background: #0a0f1a;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 11px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+}
+
+.wf-drop-zone {
+    border: 1px dashed #1e293b;
+    border-radius: 14px;
+    padding: 44px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.wf-drop-icon {
+    font-size: 28px;
+    opacity: 0.4;
+    margin-bottom: 10px;
+}
+
+.wf-drop-label {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.wf-drop-sub {
+    font-size: 11px;
+    color: #334155;
+    margin-bottom: 16px;
+}
+
+.wf-browse-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    border-radius: 7px;
+    color: #fff;
+    padding: 9px 22px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+}
+
+.wf-error-box {
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    border-radius: 6px;
+    color: #f87171;
+    font-size: 11px;
+    padding: 10px 12px;
+    margin-top: 10px;
+}
+
+/* ── Forge Stage ─────────────────────────────────────────────────────────── */
+
+.wf-forge-stage {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    overflow: hidden;
+}
+
+.wf-forge-left {
+    padding: 24px;
+    border-right: 1px solid #0f172a;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.wf-forge-right {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.wf-section-label {
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    color: #ffffff;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.wf-mini-stat {
+    background: #0a0f1a;
+    border-radius: 7px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #0f172a;
+}
+
+.wf-log-box {
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 9.5px;
+    line-height: 1.8;
+    padding: 10px;
+    background: #060d1a;
+    border-radius: 7px;
+    border: 1px solid #0a0f1a;
+}
+
+.wf-log-line {
+    animation: logFade 0.2s ease;
+}
+
+/* ── Manifest Stage ──────────────────────────────────────────────────────── */
+
+.wf-manifest-stage {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+}
+
+.wf-manifest-sidebar {
+    padding: 20px;
+    border-right: 1px solid #0f172a;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.wf-manifest-main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.wf-manifest-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid #0f172a;
+    flex-shrink: 0;
+}
+
+.wf-entity-grid {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 100%;
+    min-height: 0;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.wf-launch-btn {
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 10px 22px;
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(124, 58, 237, 0.35);
+    transition: all 0.2s;
+}
+
+/* ── Launch Overlay ──────────────────────────────────────────────────────── */
+
+.wf-launch-overlay {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 6, 23, 0.97);
+    backdrop-filter: blur(16px);
+}
+
+/* ── Manifest Card ───────────────────────────────────────────────────────── */
+
+.wf-manifest-card {
+    background: rgba(15, 23, 42, 0.9);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    animation: entityPop 0.3s ease;
+    height: max-content;
+}
+
+.wf-card-accent {
+    height: 2px;
+}
+
+.wf-card-image-slot {
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.wf-card-body {
+    padding: 12px;
+}
+
+.wf-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wf-card-kind {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.wf-card-edit-btn {
+    background: none;
+    border: 1px solid #1e293b;
+    border-radius: 3px;
+    color: #334155;
+    font-size: 8px;
+    padding: 2px 7px;
+    cursor: pointer;
+}
+
+.wf-card-name {
+    font-family: 'Goldman', sans-serif;
+    font-size: 13px;
+    color: #e2e8f0;
+    margin-bottom: 5px;
+}
+
+.wf-card-desc {
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.wf-card-empty-desc {
+    font-size: 10px;
+    color: #1e293b;
+    font-style: italic;
+}
+
+.wf-card-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wf-card-edit-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.wf-card-save-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 9px;
+    padding: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.wf-card-cancel-btn {
+    background: none;
+    border: 1px solid #1e293b;
+    border-radius: 5px;
+    color: #475569;
+    font-size: 9px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+/* ── Filter Buttons ──────────────────────────────────────────────────────── */
+
+.wf-filter-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    border-radius: 5px;
+    padding: 6px 8px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.wf-filter-btn.active {
+    background: rgba(124, 58, 237, 0.1);
+    border-color: #7c3aed33;
+}
+
+.wf-filter-icon {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wf-filter-label {
+    font-size: 11px;
+    text-transform: capitalize;
+}
+
+.wf-filter-count {
+    font-size: 10px;
+}
+
+/* ── Stats Row ───────────────────────────────────────────────────────────── */
+
+.wf-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #0f172a;
+    font-size: 11px;
+}
+
+.wf-stat-label {
+    color: #475569;
+}
+
+/* ── Warning Box ─────────────────────────────────────────────────────────── */
+
+.wf-warning {
+    font-size: 9px;
+    color: #78716c;
+    padding: 5px 8px;
+    background: rgba(251, 191, 36, 0.04);
+    border: 1px solid rgba(251, 191, 36, 0.08);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+/* ── Pipeline Steps ──────────────────────────────────────────────────────── */
+
+.wf-pipeline-step {
+    display: flex;
+    gap: 12px;
+    position: relative;
+    margin-bottom: 0;
+}
+
+.wf-pipeline-line {
+    position: absolute;
+    left: 11px;
+    top: 26px;
+    width: 1px;
+    height: 28px;
+}
+
+.wf-pipeline-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all 0.4s;
+    margin-bottom: 22px;
+}
+
+.wf-pipeline-dot.active {
+    animation: pulse 1.5s ease infinite;
+}
+
+.wf-pipeline-info {
+    padding-top: 3px;
+    margin-bottom: 22px;
+}
+
+.wf-pipeline-label {
+    font-size: 12px;
+    transition: color 0.3s;
+}
+
+.wf-pipeline-sub {
+    font-size: 10px;
+    transition: color 0.3s;
+}
+
+/* ── Progress Bar ────────────────────────────────────────────────────────── */
+
+.wf-progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.wf-progress-percent {
+    color: #c084fc;
+    font-variant-numeric: tabular-nums;
+}
+
+.wf-progress-track {
+    height: 2px;
+    background: #0f172a;
+    border-radius: 1px;
+}
+
+.wf-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #db2777);
+    border-radius: 1px;
+    transition: width 0.15s linear;
+    box-shadow: 0 0 6px rgba(192, 132, 252, 0.4);
+}
+
+/* ── Stats Grid ──────────────────────────────────────────────────────────── */
+
+.wf-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.wf-stat-value {
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+}
+
+.wf-stat-name {
+    font-size: 8px;
+    color: #334155;
+    letter-spacing: 0.1em;
+}
+
+/* ── Entity Card (Forging Stage) ─────────────────────────────────────────── */
+
+.wf-entity-card {
+    width: calc(50% - 4px);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.7);
+    position: relative;
+    overflow: hidden;
+}
+
+.wf-entity-card-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+}
+
+.wf-entity-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.wf-entity-card-name {
+    font-size: 16px;
+    color: #e2e8f0;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wf-entity-card-kind {
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+/* ── Empty States ────────────────────────────────────────────────────────── */
+
+.wf-empty-entities {
+    width: 100%;
+    text-align: center;
+    padding: 60px 20px;
+    color: #1e293b;
+    font-size: 12px;
+}
+
+.wf-empty-log {
+    color: #1e293b;
+}
+
+/* ── Forge Right Header ──────────────────────────────────────────────────── */
+
+.wf-forge-right-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.wf-entity-count {
+    font-size: 10px;
+    color: #334155;
+}
+
+/* ── Manifest World Info ─────────────────────────────────────────────────── */
+
+.wf-manifest-world-name {
+    font-family: 'Goldman', sans-serif;
+    font-size: 16px;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.wf-manifest-world-tagline {
+    font-size: 11px;
+    color: #475569;
+    font-style: italic;
+}
+
+.wf-manifest-top-name {
+    font-family: 'Goldman', sans-serif;
+    font-size: 17px;
+    color: #e2e8f0;
+    margin-right: 10px;
+}
+
+.wf-manifest-top-tagline {
+    font-size: 11px;
+    color: #475569;
+    font-style: italic;
+}
+
+/* ── Launch Overlay Content ──────────────────────────────────────────────── */
+
+.wf-launch-content {
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+}
+
+.wf-launch-icon {
+    font-size: 52px;
+    margin-bottom: 20px;
+    animation: pulse 2s ease infinite;
+}
+
+.wf-launch-title {
+    font-family: 'Goldman', sans-serif;
+    font-size: 36px;
+    color: #f1f5f9;
+    margin-bottom: 8px;
+}
+
+.wf-launch-status {
+    font-size: 12px;
+    color: #64748b;
+    letter-spacing: 0.2em;
+}
+
+.wf-launch-entering {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #334155;
+    animation: pulse 1s ease infinite;
+}
+
+/* ── Edited Badge ────────────────────────────────────────────────────────── */
+
+.wf-edited-badge {
+    font-size: 7px;
+    color: #7c3aed;
+    margin-left: 2px;
+}
+
+/* ── Kind Label ──────────────────────────────────────────────────────────── */
+
+.wf-kind-label {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* ── Image Placeholder ───────────────────────────────────────────────────── */
+
+.wf-image-placeholder {
+    text-align: center;
+}
+
+.wf-image-placeholder-icon {
+    font-size: 22px;
+    opacity: 0.35;
+}
+
+.wf-image-placeholder-text {
+    font-size: 8px;
+    opacity: 0.35;
+    letter-spacing: 0.12em;
+    margin-top: 3px;
+}
+
+/* wf section labels need to be bigger and white. wf entity count needs to be bigger and white. 
+span within wf progress header needs to be bigger and white. 
+wf pipelinedot, and sub need to be bigger but same color
+wf pipeline label, dot, and sub need to be bigger and white
+wf logline needs to be a little bigger and white
+Add header that sits above wf left and wf right that says The World Forge
+*/

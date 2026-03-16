@@ -1,6 +1,5 @@
 import Hero from "~/components/Hero";
 import TextImageContent from "~/components/TextImageContent";
-import Footer from "~/components/Footer";
 
 export default function Home() {
   return (
@@ -137,9 +136,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </main>
   );
 }

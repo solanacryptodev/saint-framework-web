@@ -263,10 +263,10 @@ export async function validateToken(token: string): Promise<PlayerRecord> {
 
         await client.authenticate(token);
 
-        const [me] = await client.query<[PlayerRecord[]]>(`SELECT * FROM $auth`);
-        if (!me?.[0]) throw new Error("Token valid but no player record found");
+        const [player] = await client.query<[PlayerRecord[]]>(`SELECT * FROM $auth`);
+        if (!player?.[0]) throw new Error("Token valid but no player record found");
 
-        return sanitizePlayer(me[0]);
+        return sanitizePlayer(player[0]);
     } finally {
         await client.close();
     }
@@ -317,8 +317,16 @@ export interface PlayerRecord {
     preferences: Record<string, unknown>;
 }
 
-// Strip password_hash before returning to client
+// Strip password_hash before returning to client.
+// Also normalize the id — SurrealDB returns RecordId objects or "table:id"
+// strings. We strip the table prefix so player.id is always the raw ID.
 function sanitizePlayer(raw: PlayerRecord & { password_hash?: string }): PlayerRecord {
     const { password_hash: _, ...safe } = raw as any;
+    // Normalize id: RecordId object → string, "player:01j..." → "01j..."
+    if (safe.id) {
+        const s = String(safe.id);
+        const colon = s.indexOf(":");
+        safe.id = colon >= 0 ? s.slice(colon + 1) : s;
+    }
     return safe;
 }
