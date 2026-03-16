@@ -132,7 +132,7 @@ export function useAuth(): AuthContextValue {
 
 // ── useRequireAuth ──────────────────────────────────────────────────────────
 // Drop into any page that requires a logged-in user.
-// Redirects to /login if the auth check fails after hydration completes.
+// Redirects to / if the auth check fails after hydration completes.
 //
 // Usage:
 //   export default function ProtectedPage() {
@@ -140,7 +140,7 @@ export function useAuth(): AuthContextValue {
 //     return <div>Hello {player().display_name}</div>;
 //   }
 
-export function useRequireAuth(redirectTo = "/login"): Accessor<Player | null> {
+export function useRequireAuth(redirectTo = "/"): Accessor<Player | null> {
     const navigate = useNavigate();
     const { player, isLoading } = useAuth();
 

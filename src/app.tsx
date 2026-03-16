@@ -5,6 +5,7 @@ import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import Nav from "~/components/Nav";
+import Footer from "~/components/Footer";
 import "./app.css";
 
 const queryClient = new QueryClient({
@@ -36,6 +37,25 @@ function NavWrapper(props: { children: any }) {
   );
 }
 
+// Footer visibility wrapper component that can use router hooks
+function FooterWrapper(props: { children: any }) {
+  const location = useLocation();
+
+  const shouldShowFooter = () => {
+    const pathname = location.pathname;
+    // Match /play/game/[gameTitle]/play pattern
+    const playGameMatch = pathname.match(/^\/play\/game\/[^/]+\/play$/);
+    return !playGameMatch;
+  };
+
+  return (
+    <>
+      {props.children}
+      {shouldShowFooter() && <Footer />}
+    </>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -43,7 +63,9 @@ export default function App() {
         <Router
           root={props => (
             <Suspense>
-              <NavWrapper>{props.children}</NavWrapper>
+              <NavWrapper>
+                <FooterWrapper>{props.children}</FooterWrapper>
+              </NavWrapper>
             </Suspense>
           )}
         >

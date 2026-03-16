@@ -1,4 +1,3 @@
-import Footer from "./Footer";
 import TextImageContent from "./TextImageContent";
 
 export default function AboutLayout() {
@@ -439,9 +438,6 @@ export default function AboutLayout() {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }
