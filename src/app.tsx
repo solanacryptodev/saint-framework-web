@@ -4,8 +4,10 @@ import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
 import { useLocation } from "@solidjs/router";
+import { MetaProvider } from "@solidjs/meta";
 import Nav from "~/components/Nav";
 import Footer from "~/components/Footer";
+import PageTitle from "~/components/PageTitle";
 import "./app.css";
 
 const queryClient = new QueryClient({
@@ -60,17 +62,20 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router
-          root={props => (
-            <Suspense>
-              <NavWrapper>
-                <FooterWrapper>{props.children}</FooterWrapper>
-              </NavWrapper>
-            </Suspense>
-          )}
-        >
-          <FileRoutes />
-        </Router>
+        <MetaProvider>
+          <Router
+            root={props => (
+              <Suspense>
+                <PageTitle />
+                <NavWrapper>
+                  <FooterWrapper>{props.children}</FooterWrapper>
+                </NavWrapper>
+              </Suspense>
+            )}
+          >
+            <FileRoutes />
+          </Router>
+        </MetaProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
