@@ -18,7 +18,7 @@ const Footer: Component = () => {
                 class="text-xl font-bold gold-gradient-text"
                 style={{ "font-family": "'Goldman', sans-serif" }}
               >
-                SAINT
+                THE SAINT FRAMEWORK
               </h3>
             </div>
             <p class="text-sm leading-relaxed" style={{ color: "var(--text-gray)" }}>
@@ -35,7 +35,7 @@ const Footer: Component = () => {
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#f5c518")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-gray)")}
                 >
-                  Adventure Quest
+                  The Serpent and the Spy
                 </a>
               </li>
               <li>
@@ -126,7 +126,7 @@ const Footer: Component = () => {
           style={{ "border-top": "1px solid var(--border-color)" }}
         >
           <p class="text-sm" style={{ color: "var(--text-muted)" }}>
-            © 2025 Saint Framework. All rights reserved.
+            © 2026 Saint Framework. All rights reserved.
           </p>
         </div>
       </div>

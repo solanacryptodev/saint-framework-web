@@ -25,9 +25,9 @@ export default function Nav() {
   return (
     <>
       {/* ── Outer wrapper and nav ─────────────────────────────────── */}
-      <div class="sticky top-0 z-50 px-4 sm:px-6 lg:px-10 pt-3 pb-1">
+      <div class="sticky top-0 z-50 px-2 sm:px-3 lg:px-4 pt-3 pb-1">
         <nav
-          class="backdrop-blur-md"
+          class="backdrop-blur-md w-fit mx-auto"
           style={{
             background: "rgba(8, 12, 20, 0.72)",
             border: "1px solid rgba(245, 197, 24, 0.22)",
@@ -37,9 +37,9 @@ export default function Nav() {
           }}
         >
           <div class="px-4 sm:px-6">
-            <div class="flex items-center justify-between h-14">
+            <div class="flex items-center justify-evenly h-14">
               {/* ── Logo ───────────────────────────────────── */}
-              <div class="flex-shrink-0 flex items-center gap-2">
+              <div class="flex-shrink-0 flex items-center gap-2 px-4 pr-15">
                 <a href="/">
                   <img
                     src="/logo.ico"
@@ -47,7 +47,7 @@ export default function Nav() {
                     class="h-8 w-8"
                   />
                 </a>
-                <a href="/" class="hidden sm:block">
+                <a href="/" class="hidden lg:block">
                   <span
                     class="font-bold text-sm tracking-widest uppercase"
                     style={{
@@ -55,13 +55,13 @@ export default function Nav() {
                       "font-family": "'Goldman', sans-serif",
                     }}
                   >
-                    SAINT
+                    THE SAINT FRAMEWORK
                   </span>
                 </a>
               </div>
 
               {/* ── Nav links ──────────────────────────────── */}
-              <ul class="flex items-center space-x-5 sm:space-x-7">
+              <ul class="flex items-center space-x-5 sm:space-x-7 px-4">
                 <li>
                   <a href="/" class={`text-sm ${active("/")}`}>
                     Home
@@ -85,7 +85,7 @@ export default function Nav() {
               </ul>
 
               {/* ── CTA buttons — auth-aware ───────────────── */}
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 px-4 pl-15">
                 <Switch>
                   {/* Loading — placeholder so layout doesn't shift */}
                   <Match when={isLoading()}>
