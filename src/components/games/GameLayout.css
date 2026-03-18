@@ -1,7 +1,7 @@
 /* Wrapper for the entire game layout */
 .game-layout-wrapper {
     height: 100%;
-    background: linear-gradient(135deg, rgba(8, 12, 20, 1) 0%, rgba(13, 21, 37, 1) 50%, rgba(8, 12, 20, 1) 100%);
+    background: linear-gradient(135deg, rgba(15, 12, 8, 1) 0%, rgba(20, 16, 10, 1) 50%, rgba(15, 12, 8, 1) 100%);
     position: relative;
 }
 
@@ -14,8 +14,8 @@
     right: 0;
     bottom: 0;
     background-image:
-        linear-gradient(rgba(100, 200, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(100, 200, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(218, 165, 32, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(218, 165, 32, 0.02) 1px, transparent 1px);
     background-size: 50px 50px;
     pointer-events: none;
     z-index: 0;
@@ -27,9 +27,9 @@
     top: 0;
     z-index: 100;
     padding: 1rem 1.5rem;
-    background: linear-gradient(180deg, rgba(8, 12, 20, 0.95) 0%, rgba(8, 12, 20, 0.8) 100%);
+    background: linear-gradient(180deg, rgba(15, 12, 8, 0.95) 0%, rgba(15, 12, 8, 0.8) 100%);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(100, 200, 255, 0.1);
+    border-bottom: 1px solid rgba(218, 165, 32, 0.1);
 }
 
 /* Main game layout grid */

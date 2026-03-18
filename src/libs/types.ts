@@ -185,7 +185,7 @@ export interface WorldNode {
     related_in?: Pick<WorldNode, "id" | "kind" | "name">[];
 }
 
-export interface WorldActor {
+export interface WorldAgent {
     id: string;
     lore_ref: string;
     name: string;
@@ -224,6 +224,88 @@ export interface WorldItem {
     state: Record<string, unknown>;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// WORLD EVENT - Narrative gravity drivers
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface WorldEvent {
+    id: string;
+    lore_ref?: string;
+    name: string;
+    description: string;
+
+    // === PARTICIPANTS ===
+    participants: string[];              // world_actor IDs involved
+    location_id?: string;                // where event occurs
+
+    // === NARRATIVE GRAVITY ===
+    gravitational_mass: [number, number, number];  // [trauma, hope, mystery] 0.0-1.0
+    swarm_attention: number;             // 0.0-1.0: % of agents focused on this
+
+    // === COHERENCE ===
+    coherence_stress: number;            // 0.0-1.0: contradiction potential
+    plausibility_decay: number;          // 0.0-1.0: rate of believability loss
+
+    // === PLAYER INFLUENCE ===
+    vector_imprint: [number, number, number];  // [moral, method, social] -1.0 to 1.0
+
+    // === PROPAGATION ===
+    concept_seeding: Record<string, number>;   // {"betrayal": 0.8, "hope": 0.3}
+    temporal_ripple: number;             // 0-10: future impact waves
+
+    // === PHASE PROGRESSION ===
+    phase_charge: number;                // 0.0-1.0: hero's journey progression contribution
+
+    // === STATE ===
+    significance: number;                // 0.0-1.0: threshold for becoming lore
+    resolved: boolean;
+    known_to_player: boolean;
+
+    // === METADATA ===
+    state: Record<string, unknown>;
+    created_at: Date;
+    updated_at: Date;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WORLD CONCEPT - Ideas that propagate through the swarm
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface WorldConcept {
+    id: string;
+    lore_ref?: string;
+    name: string;
+    description: string;
+
+    // === EMOTIONAL WEIGHT ===
+    emotional_valence: number;           // -1.0 (negative) to 1.0 (positive)
+    narrative_density: number;           // 0.0-1.0: story-generating potential
+
+    // === PLAYER INFLUENCE ===
+    vector_amplification: [number, number, number];  // [moral, method, social] multipliers
+
+    // === PROPAGATION ===
+    swarm_coherence: number;             // 0.0-1.0: % of agents adopting (>0.75 = dominant)
+    mutation_rate: number;               // 0.0-1.0: likelihood to evolve
+    gravitational_drag: number;          // 0.0-1.0: resistance to displacement
+
+    // === COHERENCE ===
+    plausibility_anchor: number;         // 0.0-1.0: reality reinforcement strength
+
+    // === RELATIONSHIPS ===
+    opposes: string[];                   // concept IDs this opposes
+    evolves_from?: string;               // parent concept ID
+
+    // === STATE ===
+    active: boolean;
+    known_to_player: boolean;
+
+    // === METADATA ===
+    state: Record<string, unknown>;
+    created_at: Date;
+    updated_at: Date;
+}
+
 export interface WorldThread {
     id: string;
     session_id: string;
@@ -240,9 +322,11 @@ export interface WorldThread {
 }
 
 export interface WorldSnapshot {
-    actors: WorldActor[];
+    agents: WorldAgent[];
     locations: WorldLocation[];
     items: WorldItem[];
+    events: WorldEvent[];
+    concepts: WorldConcept[];
     threads: WorldThread[];
     snapshotAt: string;
 }
@@ -293,9 +377,11 @@ export interface NarrativeEvent {
 // ── World Init Types ────────────────────────────────────────────────────────
 
 export interface WorldInitReport {
-    actorsPlaced: PlacedActor[];
+    agentsPlaced: PlacedAgent[];
     locationsCreated: CreatedLocation[];
     itemsPlaced: PlacedItem[];
+    conceptsCreated: CreatedConcept[];
+    eventsCreated: CreatedEvent[];
     threadsOpened: OpenedThread[];
     edgesCreated: number;
     playerStartLocation: string;
@@ -304,7 +390,7 @@ export interface WorldInitReport {
     completedAt: string;
 }
 
-export interface PlacedActor {
+export interface PlacedAgent {
     world_id: string;
     lore_name: string;
     kind: string;
@@ -328,6 +414,23 @@ export interface PlacedItem {
     holder?: string;
     location?: string;
     known_to_player: boolean;
+}
+
+export interface CreatedConcept {
+    world_id: string;
+    lore_name: string;
+    description: string;
+    emotional_valence: number;
+    swarm_coherence: number;
+}
+
+export interface CreatedEvent {
+    world_id: string;
+    lore_name: string;
+    description: string;
+    location?: string;
+    participant_count: number;
+    significance: number;
 }
 
 export interface OpenedThread {
@@ -370,7 +473,18 @@ export interface ExtractedRelation {
 export interface IngestionChunk {
     heading: string;
     content: string;
-    sectionType: "overview" | "characters" | "factions" | "locations" | "items" | "history" | "player_character" | "game_info" | "other";
+    sectionType:
+    "overview" |
+    "characters" |
+    "factions" |
+    "locations" |
+    "concepts" |
+    "events" |
+    "items" |
+    "history" |
+    "player_character" |
+    "game_info" |
+    "other";
 }
 
 export interface IngestionReport {
@@ -407,17 +521,23 @@ export type CostTier = "free" | "paid" | "premium";
 export interface GameRecord {
     id?: string;
     creator_id: string;
+    created_by: string;
     name: string;
     tagline: string;
     description: string;
     cost_tier: CostTier;
     genre: string;
+    tags: string[];
     cover_image?: string | null;
     status: "draft" | "initializing" | "review" | "ready" | "archived";
     source_file: string;
     lore_nodes: number;
     lore_edges: number;
-    world_actors: number;
+    world_agents: number;
+    world_locations: number;
+    world_concepts: number;
+    world_events: number;
+    world_items: number;
     world_threads: number;
     cost: number;           // in cents, e.g. 199 = $1.99. Always 0 when cost_tier = "free"
     visibility: "private" | "public";

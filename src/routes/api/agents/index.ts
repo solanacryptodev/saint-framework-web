@@ -4,7 +4,7 @@
 
 import { APIEvent } from "@solidjs/start/server";
 import { listActiveAgents, spawnDynamicAgent } from "~/agentic/orchestrator";
-import { type AgentDefinition } from "~/libs/surreal";
+import { type AgentDefinition } from "~/libs/types";
 
 export async function GET(_event: APIEvent) {
     const agents = await listActiveAgents();

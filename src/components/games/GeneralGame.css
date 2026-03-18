@@ -12,7 +12,7 @@
     flex-shrink: 0;
     position: relative;
     z-index: 100;
-    background: linear-gradient(135deg, rgba(8, 12, 20, 1) 0%, rgba(13, 21, 37, 1) 50%, rgba(8, 12, 20, 1) 100%);
+    background: linear-gradient(135deg, rgba(15, 12, 8, 1) 0%, rgba(20, 16, 10, 1) 50%, rgba(15, 12, 8, 1) 100%);
 }
 
 /* Back button styling */
@@ -20,24 +20,24 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(100, 200, 255, 0.1);
-    border: 1px solid rgba(100, 200, 255, 0.2);
-    color: rgba(100, 200, 255, 0.8);
+    background: rgba(218, 165, 32, 0.1);
+    border: 1px solid rgba(218, 165, 32, 0.2);
+    color: rgba(218, 165, 32, 0.8);
     font-size: 0.875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     cursor: pointer;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
+    border-radius: 4px;
     transition: all 0.2s ease;
     font-family: 'Tomorrow', sans-serif;
 }
 
 .general-game-back .back-to-game:hover {
-    background: rgba(100, 200, 255, 0.2);
-    border-color: rgba(100, 200, 255, 0.4);
-    color: rgba(100, 200, 255, 0.95);
+    background: rgba(218, 165, 32, 0.2);
+    border-color: rgba(218, 165, 32, 0.4);
+    color: rgba(244, 228, 193, 0.95);
 }
 
 .general-game-back .back-to-game svg {
@@ -62,7 +62,7 @@
     height: 2px;
     background: linear-gradient(90deg,
             transparent 0%,
-            rgba(100, 200, 255, 0.5) 50%,
+            rgba(218, 165, 32, 0.5) 50%,
             transparent 100%);
     animation: scanline 4s linear infinite;
     pointer-events: none;

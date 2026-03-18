@@ -20,7 +20,7 @@
 //
 //   Current: single namespace/database — one lore graph per DB instance.
 //   The Saint Framework runs one game world per deployment. If multi-world
-//   is ever needed, add game_id columns to lore_node, world_actor,
+//   is ever needed, add game_id columns to lore_node, world_agent,
 //   world_location, and world_item and filter everywhere.
 //
 // ── Schema ownership ──────────────────────────────────────────────────────
@@ -39,9 +39,11 @@
 import { Surreal, Table, Values } from "surrealdb";
 import { applyAuthSchema } from "./auth";
 import type {
-    WorldActor,
+    WorldAgent,
     WorldLocation,
     WorldItem,
+    WorldEvent,
+    WorldConcept,
     WorldThread,
     WorldSnapshot,
     WorldImpact,
@@ -51,6 +53,7 @@ import type {
     AgentDefinition,
     NarrativeEvent
 } from "./types";
+import { applySchema } from "./schemas";
 
 // ── Environment variable helper ─────────────────────────────────────────────
 // Trims whitespace/newlines that can cause authentication failures
@@ -87,146 +90,6 @@ export async function getDB(): Promise<Surreal> {
         _schemaApplied = true;
     }
     return _db;
-}
-
-// ── Schema ────────────────────────────────────────────────────────────────
-
-async function applySchema(db: Surreal) {
-
-    // ── LORE GRAPH ────────────────────────────────────────────────────────────
-    // Written once during World Forge. Read-heavy during play.
-    // lore_node and lore_relation are immutable after ingestion.
-    // lore_event grows during play — one row per player decision.
-
-    await db.query(`
-    DEFINE TABLE IF NOT EXISTS lore_node SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS kind         ON lore_node TYPE string;
-    DEFINE FIELD IF NOT EXISTS name         ON lore_node TYPE string;
-    DEFINE FIELD IF NOT EXISTS description  ON lore_node TYPE string;
-    DEFINE FIELD IF NOT EXISTS properties   ON lore_node TYPE object  DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS canon        ON lore_node TYPE bool    DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS created_at   ON lore_node TYPE datetime DEFAULT time::now();
-    DEFINE FIELD IF NOT EXISTS updated_at   ON lore_node TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS lore_node_name ON lore_node COLUMNS name;
-
-    DEFINE TABLE IF NOT EXISTS lore_relation
-      TYPE RELATION FROM lore_node TO lore_node SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS relation_type ON lore_relation TYPE string;
-    DEFINE FIELD IF NOT EXISTS weight        ON lore_relation TYPE float   DEFAULT 1.0;
-    DEFINE FIELD IF NOT EXISTS established   ON lore_relation TYPE string  DEFAULT "pre-game";
-    DEFINE FIELD IF NOT EXISTS metadata      ON lore_relation TYPE object  DEFAULT {};
-
-    -- Append-only event log. Every player decision becomes permanent lore.
-    DEFINE TABLE IF NOT EXISTS lore_event SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS session_id    ON lore_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS turn_number   ON lore_event TYPE int;
-    DEFINE FIELD IF NOT EXISTS event_kind    ON lore_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS description   ON lore_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS actors        ON lore_event TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS locations     ON lore_event TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS items         ON lore_event TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS consequences  ON lore_event TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS player_choice ON lore_event TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS created_at    ON lore_event TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS lore_event_session ON lore_event COLUMNS session_id;
-  `);
-
-    // ── WORLD GRAPH ───────────────────────────────────────────────────────────
-    // Written during World Forge init, mutated every turn during play.
-    // This is the live simulation state the ACE agents read and write.
-
-    await db.query(`
-    -- Every character and NPC with live position + behavioral state
-    DEFINE TABLE IF NOT EXISTS world_actor SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS lore_ref     ON world_actor TYPE string;
-    DEFINE FIELD IF NOT EXISTS name         ON world_actor TYPE string;
-    DEFINE FIELD IF NOT EXISTS kind         ON world_actor TYPE string; -- player|npc|faction_rep
-    DEFINE FIELD IF NOT EXISTS location_id  ON world_actor TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS disposition  ON world_actor TYPE string DEFAULT "neutral";
-    DEFINE FIELD IF NOT EXISTS awareness    ON world_actor TYPE string DEFAULT "unaware";
-    DEFINE FIELD IF NOT EXISTS goal_current ON world_actor TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS goal_hidden  ON world_actor TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS state        ON world_actor TYPE object DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS active       ON world_actor TYPE bool   DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS updated_at   ON world_actor TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS world_actor_name ON world_actor COLUMNS name;
-
-    -- Every location with current danger level and unrevealed secrets
-    DEFINE TABLE IF NOT EXISTS world_location SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS lore_ref          ON world_location TYPE string;
-    DEFINE FIELD IF NOT EXISTS name              ON world_location TYPE string;
-    DEFINE FIELD IF NOT EXISTS region            ON world_location TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS accessible        ON world_location TYPE bool   DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS danger_level      ON world_location TYPE float  DEFAULT 0.0;
-    DEFINE FIELD IF NOT EXISTS atmosphere        ON world_location TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS secrets           ON world_location TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS revealed_secrets  ON world_location TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS state             ON world_location TYPE object DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS updated_at        ON world_location TYPE datetime DEFAULT time::now();
-
-    -- Every item with current holder and player awareness
-    DEFINE TABLE IF NOT EXISTS world_item SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS lore_ref         ON world_item TYPE string;
-    DEFINE FIELD IF NOT EXISTS name             ON world_item TYPE string;
-    DEFINE FIELD IF NOT EXISTS holder_actor     ON world_item TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS location_id      ON world_item TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS accessible       ON world_item TYPE bool   DEFAULT false;
-    DEFINE FIELD IF NOT EXISTS known_to_player  ON world_item TYPE bool   DEFAULT false;
-    DEFINE FIELD IF NOT EXISTS condition        ON world_item TYPE string DEFAULT "intact";
-    DEFINE FIELD IF NOT EXISTS state            ON world_item TYPE object DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS updated_at       ON world_item TYPE datetime DEFAULT time::now();
-
-    -- Open narrative threads. Tension and urgency drift each turn.
-    DEFINE TABLE IF NOT EXISTS world_thread SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS session_id         ON world_thread TYPE string;
-    DEFINE FIELD IF NOT EXISTS name               ON world_thread TYPE string;
-    DEFINE FIELD IF NOT EXISTS description        ON world_thread TYPE string;
-    DEFINE FIELD IF NOT EXISTS tension            ON world_thread TYPE float DEFAULT 0.3;
-    DEFINE FIELD IF NOT EXISTS urgency            ON world_thread TYPE float DEFAULT 0.3;
-    DEFINE FIELD IF NOT EXISTS active             ON world_thread TYPE bool  DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS turn_opened        ON world_thread TYPE int   DEFAULT 0;
-    DEFINE FIELD IF NOT EXISTS turn_resolved      ON world_thread TYPE option<int>;
-    DEFINE FIELD IF NOT EXISTS involved_actors    ON world_thread TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS involved_locations ON world_thread TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS consequence_seeds  ON world_thread TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS updated_at         ON world_thread TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS world_thread_session ON world_thread COLUMNS session_id;
-
-    -- Spatial and relational edges: AT, LEADS_TO, HOLDS, AWARE_OF, GUARDS
-    DEFINE TABLE IF NOT EXISTS world_edge TYPE RELATION SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS edge_type     ON world_edge TYPE string;
-    DEFINE FIELD IF NOT EXISTS weight        ON world_edge TYPE float DEFAULT 1.0;
-    DEFINE FIELD IF NOT EXISTS bidirectional ON world_edge TYPE bool  DEFAULT false;
-    DEFINE FIELD IF NOT EXISTS metadata      ON world_edge TYPE object DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS active        ON world_edge TYPE bool  DEFAULT true;
-  `);
-
-    // ── ACE SYSTEM TABLES ─────────────────────────────────────────────────────
-    // Infrastructure for the agent pipeline.
-
-    await db.query(`
-    -- Dynamic agent definitions (persisted, rehydrated on boot)
-    DEFINE TABLE IF NOT EXISTS agent_definition SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS name         ON agent_definition TYPE string;
-    DEFINE FIELD IF NOT EXISTS role         ON agent_definition TYPE string;
-    DEFINE FIELD IF NOT EXISTS instructions ON agent_definition TYPE string;
-    DEFINE FIELD IF NOT EXISTS model        ON agent_definition TYPE string DEFAULT "gpt-4o-mini";
-    DEFINE FIELD IF NOT EXISTS tools        ON agent_definition TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS active       ON agent_definition TYPE bool   DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS metadata     ON agent_definition TYPE object DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS created_at   ON agent_definition TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS agent_name   ON agent_definition COLUMNS name UNIQUE;
-
-    -- Structured agent output log (separate from lore_event which is player-facing)
-    DEFINE TABLE IF NOT EXISTS narrative_event SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS session_id ON narrative_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS agent_name ON narrative_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS event_type ON narrative_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS content    ON narrative_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS metadata   ON narrative_event TYPE object DEFAULT {};
-    DEFINE FIELD IF NOT EXISTS created_at ON narrative_event TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS narrative_session ON narrative_event COLUMNS session_id;
-  `);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -295,8 +158,8 @@ export async function codifyLoreRelation(
 export async function getWorldSnapshot(sessionId: string): Promise<WorldSnapshot> {
     const db = await getDB();
 
-    const [actors] = await db.query<[WorldActor[]]>(
-        `SELECT * FROM world_actor WHERE active = true`
+    const [agents] = await db.query<[WorldAgent[]]>(
+        `SELECT * FROM world_agent WHERE active = true`
     );
     const [locations] = await db.query<[WorldLocation[]]>(
         `SELECT * FROM world_location`
@@ -304,15 +167,23 @@ export async function getWorldSnapshot(sessionId: string): Promise<WorldSnapshot
     const [items] = await db.query<[WorldItem[]]>(
         `SELECT * FROM world_item`
     );
+    const [events] = await db.query<[WorldEvent[]]>(
+        `SELECT * FROM world_event`
+    );
+    const [concepts] = await db.query<[WorldConcept[]]>(
+        `SELECT * FROM world_concept`
+    );
     const [threads] = await db.query<[WorldThread[]]>(
         `SELECT * FROM world_thread WHERE session_id = $sid AND active = true`,
         { sid: sessionId }
     );
 
     return {
-        actors: actors ?? [],
+        agents: agents ?? [],
         locations: locations ?? [],
         items: items ?? [],
+        events: events ?? [],
+        concepts: concepts ?? [],
         threads: threads ?? [],
         snapshotAt: new Date().toISOString(),
     };

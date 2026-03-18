@@ -2,9 +2,9 @@ import { type JSX } from 'solid-js';
 import './GameLayout.css';
 
 export interface GameLayoutProps {
-    characterPanel: JSX.Element;
-    narrativePanel: JSX.Element;
-    geoPanel: JSX.Element;
+    agentPanel: JSX.Element;
+    missionPanel: JSX.Element;
+    intelPanel: JSX.Element;
 }
 
 export default function GameLayout(props: GameLayoutProps) {
@@ -12,19 +12,19 @@ export default function GameLayout(props: GameLayoutProps) {
         <div class="game-layout-wrapper">
             {/* Main Content */}
             <div class="game-layout">
-                {/* Left Panel - Character */}
+                {/* Left Panel - Agent Profile */}
                 <div class="panel-left">
-                    {props.characterPanel}
+                    {props.agentPanel}
                 </div>
 
-                {/* Center Panel - Narrative */}
+                {/* Center Panel - Mission */}
                 <div class="panel-center">
-                    {props.narrativePanel}
+                    {props.missionPanel}
                 </div>
 
-                {/* Right Panel - Geo */}
+                {/* Right Panel - Intelligence */}
                 <div class="panel-right">
-                    {props.geoPanel}
+                    {props.intelPanel}
                 </div>
             </div>
         </div>

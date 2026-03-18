@@ -2,10 +2,15 @@ import { createSignal, Show, For } from 'solid-js';
 import { useParams, useNavigate } from '@solidjs/router';
 import GeneralGame from './games/GeneralGame';
 import Reviews from './Reviews';
+import type { GameRecord } from '~/libs/types';
 import './GameDetail.css';
 import './Reviews.css';
 
-export default function GameDetail() {
+interface GameDetailProps {
+  game?: GameRecord;
+}
+
+export default function GameDetail(props: GameDetailProps) {
   const params = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = createSignal<'overview' | 'analytics' | 'requirements'>('overview');
@@ -23,25 +28,27 @@ export default function GameDetail() {
       .join(' ');
   };
 
-  const gameTitle = getGameTitle();
-  const isSerpentSpy = gameTitle.toLowerCase() === 'The Serpent And The Spy'.toLowerCase();
+  const gameTitle = props.game?.name ?? getGameTitle();
 
-  // Mock game data matching the target design
+  // Use real game data from props, fallback to mock data
   const gameData = {
     title: gameTitle,
-    description: isSerpentSpy
-      ? 'Navigate the neon-lit sectors of a futuristic galaxy where AI and humanity merge in an epic struggle for the ultimate cosmic power.'
-      : 'Navigate the neon-lit sectors of a futuristic galaxy where AI and humanity merge in an epic struggle for the ultimate cosmic power.',
-    developer: 'Nebula Studios',
+    tagline: props.game?.tagline ?? '',
+    description: props.game?.description ?? 'Embark on a limitless journey across the cosmos. Pilot your vessel through treacherous asteroid fields, engage in tactical fleet battles, and uncover the mysteries of the Aetherium Core.',
+    developer: props.game?.created_by ?? 'Unknown Creator',
     rating: 4.8,
     reviews: 1024,
-    releaseDate: '10/14/2024',
-    tags: isSerpentSpy ? ['Spy Thriller', 'Cyberpunk', 'Espionage', 'Action'] : ['Sci-Fi', 'Cyberpunk', 'Exploration', 'Action'],
-    isFree: false,
-    price: isSerpentSpy ? 2.00 : 29.99,
+    releaseDate: props.game?.created_at
+      ? new Date(props.game.created_at).toLocaleDateString('en-US')
+      : '10/14/2024',
+    tags: props.game?.tags?.length
+      ? props.game.tags
+      : ['Sci-Fi', 'Cyberpunk', 'Exploration', 'Action'],
+    isFree: props.game?.cost_tier === 'free' || (props.game?.cost ?? 0) === 0,
+    price: props.game?.cost ? props.game.cost / 100 : 29.99,
     players: 4092,
-    swarmSize: 500,
-    genre: isSerpentSpy ? 'Spy Thriller' : 'Sci-Fi MMO',
+    swarmSize: props.game?.world_agents ?? 500,
+    genre: props.game?.genre || 'Sci-Fi MMO',
     images: ['/placeholder1.jpg', '/placeholder2.jpg', '/placeholder3.jpg'],
     features: [
       'Procedurally generated star systems',
@@ -59,7 +66,7 @@ export default function GameDetail() {
   };
 
   const handleBuyNow = () => {
-    if (isSerpentSpy) {
+    if (props.game) {
       // Navigate to the game play route
       navigate(`/play/game/${params.gameTitle}/play`, { replace: true });
     } else {
@@ -100,7 +107,7 @@ export default function GameDetail() {
         <div class="game-detail-header">
           <div class="game-title-section">
             <h1 class="game-detail-title">{gameData.title}</h1>
-            <p class="game-subtitle">{gameData.description}</p>
+            <p class="game-subtitle">{gameData.tagline || gameData.description}</p>
           </div>
 
           <div class="game-meta-info">
@@ -304,13 +311,7 @@ export default function GameDetail() {
           <Show when={activeTab() === 'overview'}>
             <div class="overview-content">
               <h2>About This Game</h2>
-              <p>
-                Embark on a limitless journey across the cosmos. Pilot your vessel through treacherous
-                asteroid fields, engage in tactical fleet battles, and uncover the mysteries of the
-                Aetherium Core. With fully customizable ships and a dynamic player-driven economy, your
-                destiny among the stars is yours to forge. Will you become a legendary explorer, a ruthless
-                corporate mercenary, or a feared pirate of the neon nebula?
-              </p>
+              <p>{gameData.description}</p>
 
               <div class="features-updates">
                 <div class="features-section">
