@@ -2,7 +2,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { Table, StringRecordId } from "surrealdb";
 import { getDB } from "../libs/surreal";
-import { WorldActor, WorldLocation, WorldItem, WorldThread, LoreNode, WorldInitReport } from "../libs/types";
+import { WorldAgent, WorldLocation, WorldItem, WorldThread, LoreNode, WorldConcept, WorldEvent } from "../libs/types";
 import {
     getLoreContext,
     upsertWorldState,
@@ -12,9 +12,9 @@ import {
 
 // ── World Init Tools ──────────────────────────────────────────────────────────────────
 
-export const writeActorTool = createTool({
-    id: "write_world_actor",
-    description: "Create a world_actor entry for a character or NPC with their starting simulation state",
+export const writeAgentTool = createTool({
+    id: "write_world_agent",
+    description: "Create a world_agent entry for a character or NPC with their starting simulation state",
     inputSchema: z.object({
         lore_node_name: z.string().describe("Exact name of the corresponding lore_node"),
         kind: z.enum(["player", "npc", "faction_rep"]),
@@ -42,7 +42,7 @@ export const writeActorTool = createTool({
         );
         const locationId = locRows?.[0] ? String(locRows[0].id) : null;
 
-        const [created] = await db.create<WorldActor>(new Table("world_actor")).content({
+        const [created] = await db.create<WorldAgent>(new Table("world_agent")).content({
             lore_ref: loreRef,
             name: lore_node_name,
             kind: kind,
@@ -120,7 +120,7 @@ export const writeItemTool = createTool({
         // Resolve holder
         let holderActorId: string | undefined;
         if (holder_actor_name) {
-            const [actorRows] = await db.query<[WorldActor[]]>(
+            const [actorRows] = await db.query<[WorldAgent[]]>(
                 `SELECT id FROM world_actor WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
                 { n: holder_actor_name }
             );
@@ -170,7 +170,7 @@ export const writeThreadTool = createTool({
         // Resolve actors
         const actorIds: string[] = [];
         for (const name of involved_actor_names ?? []) {
-            const [rows] = await db.query<[WorldActor[]]>(
+            const [rows] = await db.query<[WorldAgent[]]>(
                 `SELECT id FROM world_actor WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
                 { n: name }
             );
@@ -253,6 +253,153 @@ export const writeEdgeTool = createTool({
         }
 
         return { from: from_name, to: to_name, type: edge_type, status: "created" };
+    },
+});
+
+export const writeConceptTool = createTool({
+    id: "write_world_concept",
+    description: "Create a world_concept entry — an idea, ideology, or abstract force that propagates through the narrative swarm",
+    inputSchema: z.object({
+        lore_node_name: z.string().describe("Exact name of the corresponding lore_node"),
+        description: z.string().describe("What this concept represents in the world"),
+        emotional_valence: z.number().min(-1).max(1).default(0).describe("-1.0 (negative/dark) to 1.0 (positive/hopeful)"),
+        narrative_density: z.number().min(0).max(1).default(0.3).describe("0.0-1.0: story-generating potential"),
+        vector_amplification: z.tuple([z.number(), z.number(), z.number()]).default([1.0, 1.0, 1.0]).describe("[moral, method, social] multipliers when concept is active"),
+        swarm_coherence: z.number().min(0).max(1).default(0).describe("0.0-1.0: % of agents adopting this concept (>0.75 = dominant ideology)"),
+        mutation_rate: z.number().min(0).max(1).default(0.1).describe("0.0-1.0: likelihood to evolve over time"),
+        gravitational_drag: z.number().min(0).max(1).default(0.5).describe("0.0-1.0: resistance to displacement by other concepts"),
+        plausibility_anchor: z.number().min(0).max(1).default(0.5).describe("0.0-1.0: reality reinforcement strength"),
+        opposes: z.array(z.string()).default([]).describe("Names of other world_concepts this one opposes"),
+        evolves_from_name: z.string().optional().describe("Name of parent concept this evolves from"),
+        known_to_player: z.boolean().default(false).describe("Does the player know about this concept?"),
+        state: z.record(z.string(), z.unknown()).default({}),
+    }),
+    execute: async ({ lore_node_name, description, emotional_valence, narrative_density, vector_amplification, swarm_coherence, mutation_rate, gravitational_drag, plausibility_anchor, opposes, evolves_from_name, known_to_player, state }) => {
+        const db = await getDB();
+
+        // Resolve lore reference
+        const [loreRows] = await db.query<[LoreNode[]]>(
+            `SELECT id FROM lore_node WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
+            { n: lore_node_name }
+        );
+        const loreRef = loreRows?.[0] ? String(loreRows[0].id) : "";
+
+        // Resolve opposing concepts
+        const opposeIds: string[] = [];
+        for (const name of opposes ?? []) {
+            const [rows] = await db.query<[WorldConcept[]]>(
+                `SELECT id FROM world_concept WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
+                { n: name }
+            );
+            if (rows?.[0]) opposeIds.push(String(rows[0].id));
+        }
+
+        // Resolve evolves_from concept
+        let evolvesFromId: string | undefined;
+        if (evolves_from_name) {
+            const [rows] = await db.query<[WorldConcept[]]>(
+                `SELECT id FROM world_concept WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
+                { n: evolves_from_name }
+            );
+            evolvesFromId = rows?.[0] ? String(rows[0].id) : undefined;
+        }
+
+        const [created] = await db.create<WorldConcept>(new Table("world_concept")).content({
+            lore_ref: loreRef,
+            name: lore_node_name,
+            description: description,
+            emotional_valence: emotional_valence,
+            narrative_density: narrative_density,
+            vector_amplification: vector_amplification,
+            swarm_coherence: swarm_coherence,
+            mutation_rate: mutation_rate,
+            gravitational_drag: gravitational_drag,
+            plausibility_anchor: plausibility_anchor,
+            opposes: opposeIds,
+            evolves_from: evolvesFromId,
+            active: true,
+            known_to_player: known_to_player,
+            state: state ?? {},
+        });
+
+        return { world_id: String(created.id), name: lore_node_name, status: "created" };
+    },
+});
+
+export const writeEventTool = createTool({
+    id: "write_world_event",
+    description: "Create a world_event entry — a significant happening that drives narrative gravity and pulls agents toward it",
+    inputSchema: z.object({
+        lore_node_name: z.string().describe("Exact name of the corresponding lore_node (or a new event name)"),
+        description: z.string().describe("What happened or is happening"),
+        participant_names: z.array(z.string()).default([]).describe("Names of world_actors involved in this event"),
+        location_name: z.string().optional().describe("Name of world_location where this event occurs"),
+        gravitational_mass: z.tuple([z.number(), z.number(), z.number()]).default([0.0, 0.0, 0.0]).describe("[trauma, hope, mystery] 0.0-1.0: what kind of pull this event exerts"),
+        swarm_attention: z.number().min(0).max(1).default(0).describe("0.0-1.0: % of agents focused on this event"),
+        coherence_stress: z.number().min(0).max(1).default(0).describe("0.0-1.0: contradiction potential"),
+        plausibility_decay: z.number().min(0).max(1).default(0.1).describe("0.0-1.0: rate of believability loss"),
+        vector_imprint: z.tuple([z.number(), z.number(), z.number()]).default([0.0, 0.0, 0.0]).describe("[moral, method, social] -1.0 to 1.0: signature left by player"),
+        concept_seeding: z.record(z.string(), z.number()).default({}).describe("Ideas spawned from this event e.g. {'betrayal': 0.8, 'hope': 0.3}"),
+        temporal_ripple: z.number().min(0).max(10).default(0).describe("0-10: future impact waves"),
+        phase_charge: z.number().min(0).max(1).default(0).describe("0.0-1.0: hero's journey progression contribution"),
+        significance: z.number().min(0).max(1).default(0.5).describe("0.0-1.0: threshold for becoming permanent lore"),
+        known_to_player: z.boolean().default(false).describe("Does the player know about this event?"),
+        state: z.record(z.string(), z.unknown()).default({}),
+    }),
+    execute: async ({ lore_node_name, description, participant_names, location_name, gravitational_mass, swarm_attention, coherence_stress, plausibility_decay, vector_imprint, concept_seeding, temporal_ripple, phase_charge, significance, known_to_player, state }) => {
+        const db = await getDB();
+
+        // Resolve lore reference (optional — events may not have a lore_node)
+        let loreRef = "";
+        const [loreRows] = await db.query<[LoreNode[]]>(
+            `SELECT id FROM lore_node WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
+            { n: lore_node_name }
+        );
+        if (loreRows?.[0]) {
+            loreRef = String(loreRows[0].id);
+        }
+
+        // Resolve participants (world_actor names)
+        const participantIds: string[] = [];
+        for (const name of participant_names ?? []) {
+            const [rows] = await db.query<[WorldAgent[]]>(
+                `SELECT id FROM world_actor WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
+                { n: name }
+            );
+            if (rows?.[0]) participantIds.push(String(rows[0].id));
+        }
+
+        // Resolve location
+        let locationId: string | undefined;
+        if (location_name) {
+            const [locRows] = await db.query<[WorldLocation[]]>(
+                `SELECT id FROM world_location WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
+                { n: location_name }
+            );
+            locationId = locRows?.[0] ? String(locRows[0].id) : undefined;
+        }
+
+        const [created] = await db.create<WorldEvent>(new Table("world_event")).content({
+            lore_ref: loreRef || undefined,
+            name: lore_node_name,
+            description: description,
+            participants: participantIds,
+            location_id: locationId,
+            gravitational_mass: gravitational_mass,
+            swarm_attention: swarm_attention,
+            coherence_stress: coherence_stress,
+            plausibility_decay: plausibility_decay,
+            vector_imprint: vector_imprint,
+            concept_seeding: concept_seeding,
+            temporal_ripple: temporal_ripple,
+            phase_charge: phase_charge,
+            significance: significance,
+            resolved: false,
+            known_to_player: known_to_player,
+            state: state ?? {},
+        });
+
+        return { world_id: String(created.id), name: lore_node_name, status: "created" };
     },
 });
 

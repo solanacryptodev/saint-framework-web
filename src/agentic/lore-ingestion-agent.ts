@@ -102,6 +102,10 @@ export function chunkLoreBible(markdown: string): IngestionChunk[] {
         locations: "locations",
         item: "items",
         items: "items",
+        concept: "concepts",
+        concepts: "concepts",
+        event: "events",
+        events: "events",
         history: "history",
         secret: "history",
         secrets: "history",
@@ -128,7 +132,10 @@ export function chunkLoreBible(markdown: string): IngestionChunk[] {
     }
 
     for (const line of lines) {
-        if (line.startsWith("## ")) {
+        if (line.startsWith("# ")) {
+            // Skip top-level # headers — they're document titles, not lore sections
+            continue;
+        } else if (line.startsWith("## ")) {
             flushChunk();
             currentSection = line.replace("## ", "").trim();
             currentHeading = currentSection;
@@ -156,7 +163,7 @@ const extractEntitiesTool = createTool({
     description: "Extract structured lore entities from a markdown text chunk",
     inputSchema: z.object({
         chunk: z.string().describe("The markdown chunk to extract from"),
-        sectionType: z.string().describe("The type of section: characters|factions|locations|items|history|other"),
+        sectionType: z.string().describe("The type of section: characters|factions|locations|items|history|concepts|events|other"),
         existingEntityNames: z.array(z.string()).describe("Already-known entity names to avoid duplication"),
     }),
     execute: async ({ chunk, sectionType, existingEntityNames }) => {
@@ -280,7 +287,7 @@ export function buildIngestionAgent(): Agent {
     return new Agent({
         id: "lore-ingestion-agent",
         name: "lore-ingestion-agent",
-        model: openrouter("openrouter/healer-alpha"),
+        model: openrouter("minimax/minimax-m2.5"),
         instructions: `
 
 CRITICAL RULES — READ BEFORE WRITING ANYTHING:
@@ -313,6 +320,7 @@ ENTITY KINDS:
 - location: places, districts, buildings, regions
 - item: objects, artifacts, relics, tools
 - concept: abstract things like "The Shards", "The Reassembly plan", "The Dead God's purpose"
+- event: named events, occurrences, incidents
 
 PROPERTIES TO EXTRACT per entity kind:
 - character: role, faction, secrets, status (alive/missing/unknown)
@@ -320,6 +328,7 @@ PROPERTIES TO EXTRACT per entity kind:
 - location: district, controlled_by, connections, secrets
 - item: owner, abilities, special_properties
 - concept: significance, who_knows_about_it
+- event: significance, who_knows_about_it
 
 Be exhaustive. Every named entity deserves a node. Every stated or implied relationship deserves an edge.
 
@@ -457,7 +466,7 @@ CRITICAL RULES:
     const curator = new Agent({
         id: "lore-curator-validator",
         name: "lore-curator-validator",
-        model: openrouter("openrouter/healer-alpha"),
+        model: openrouter("minimax/minimax-m2.5"),
         instructions: "You are a lore curator. Review ingestion results and flag obvious gaps.",
         tools: {},
     });
@@ -501,9 +510,11 @@ One sentence per warning. If all looks correct, say "No issues found."
         source_file: sourceFileName,
         lore_nodes: nodesWritten.length,
         lore_edges: edgesWritten.length,
-        world_actors: worldReport.actorsPlaced.length,
+        world_agents: worldReport.agentsPlaced.length,
         world_locations: worldReport.locationsCreated.length,
         world_items: worldReport.itemsPlaced.length,
+        world_concepts: worldReport.conceptsCreated.length,
+        world_events: worldReport.eventsCreated.length,
         world_threads: worldReport.threadsOpened.length,
     });
 

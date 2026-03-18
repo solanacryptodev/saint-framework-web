@@ -9,7 +9,7 @@
 // One player can own many games. Each game has:
 //   • A game record in SurrealDB (name, tagline, creator, status)
 //   • A fully initialized Lore Graph (lore_node + lore_relation + lore_event)
-//   • A fully initialized World Graph (world_actor, world_location, etc.)
+//   • A fully initialized World Graph (world_agent, world_location, world_item, world_concept, world_event, world_thread)
 //   • Per-entity asset bindings (image URLs attached to lore_nodes)
 //   • A world_init record confirming both graphs are ready
 //
@@ -20,48 +20,8 @@
 // /play/[gameId]       reads a ready record and starts a session
 
 import { getDB } from "./surreal";
-import { Table } from "surrealdb";
+import { Table, surql } from "surrealdb";
 import { CostTier, GameRecord } from "./types";
-
-// ── Schema ──────────────────────────────────────────────────────────────────
-
-export async function applyGameSchema() {
-    const db = await getDB();
-
-    await db.query(`
-    DEFINE TABLE game SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS creator_id    ON game TYPE string;
-    DEFINE FIELD IF NOT EXISTS name          ON game TYPE string;
-    DEFINE FIELD IF NOT EXISTS tagline       ON game TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS description   ON game TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS cost_tier     ON game TYPE string DEFAULT "free";
-    DEFINE FIELD IF NOT EXISTS genre         ON game TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS cover_image   ON game TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS status        ON game TYPE string DEFAULT "draft";
-    DEFINE FIELD IF NOT EXISTS source_file   ON game TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS lore_nodes    ON game TYPE int    DEFAULT 0;
-    DEFINE FIELD IF NOT EXISTS lore_edges    ON game TYPE int    DEFAULT 0;
-    DEFINE FIELD IF NOT EXISTS world_actors  ON game TYPE int    DEFAULT 0;
-    DEFINE FIELD IF NOT EXISTS world_threads ON game TYPE int    DEFAULT 0;
-    DEFINE FIELD IF NOT EXISTS cost          ON game TYPE int    DEFAULT 0;
-    DEFINE FIELD IF NOT EXISTS visibility    ON game TYPE string DEFAULT "private";
-    DEFINE FIELD IF NOT EXISTS created_at    ON game TYPE datetime DEFAULT time::now();
-    DEFINE FIELD IF NOT EXISTS updated_at    ON game TYPE datetime DEFAULT time::now();
-    DEFINE FIELD IF NOT EXISTS launched_at   ON game TYPE option<datetime>;
-    DEFINE INDEX IF NOT EXISTS game_creator  ON game COLUMNS creator_id;
-
-    -- Per-entity image/asset bindings (attached during World Forge review)
-    DEFINE TABLE IF NOT EXISTS entity_asset SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS game_id       ON entity_asset TYPE string;
-    DEFINE FIELD IF NOT EXISTS lore_node_id  ON entity_asset TYPE string;
-    DEFINE FIELD IF NOT EXISTS image_url     ON entity_asset TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS audio_url     ON entity_asset TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS notes         ON entity_asset TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS updated_at    ON entity_asset TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS asset_game    ON entity_asset COLUMNS game_id;
-    DEFINE INDEX IF NOT EXISTS asset_node    ON entity_asset COLUMNS lore_node_id;
-  `);
-}
 
 // ── CRUD ────────────────────────────────────────────────────────────────────
 
@@ -72,9 +32,12 @@ export async function createGame(
         tagline?: string;
         description?: string;
         genre?: string;
+        tags?: string[];
         cost_tier?: CostTier;
         cost?: number;
         sourceFile?: string;
+        coverImage?: string | null;
+        createdBy?: string;
     }
 ): Promise<GameRecord> {
     const db = await getDB();
@@ -82,21 +45,31 @@ export async function createGame(
     const normalizedCreatorId = creatorId.includes(":")
         ? creatorId.slice(creatorId.indexOf(":") + 1)
         : creatorId;
+    const now = new Date().toISOString();
     const [record] = await db.create<GameRecord>(new Table("game")).content({
         creator_id: normalizedCreatorId,
+        created_by: params.createdBy,
         name: params.name,
         tagline: params.tagline ?? "",
         description: params.description ?? "",
         genre: params.genre ?? "",
+        tags: params.tags ?? [],
         cost_tier: params.cost_tier ?? "free",
         cost: params.cost ?? 0,
         status: "draft",
         source_file: params.sourceFile ?? "",
+        cover_image: params.coverImage ?? null,
         lore_nodes: 0,
         lore_edges: 0,
-        world_actors: 0,
+        world_agents: 0,
+        world_locations: 0,
+        world_items: 0,
+        world_concepts: 0,
+        world_events: 0,
         world_threads: 0,
         visibility: "private",
+        created_at: now,
+        updated_at: now,
     });
     return record;
 }
@@ -104,7 +77,16 @@ export async function createGame(
 export async function updateGameStatus(
     gameId: string,
     status: GameRecord["status"],
-    stats?: Partial<Pick<GameRecord, "lore_nodes" | "lore_edges" | "world_actors" | "world_threads">>
+    stats?: Partial<Pick<GameRecord,
+        "lore_nodes" |
+        "lore_edges" |
+        "world_agents" |
+        "world_locations" |
+        "world_items" |
+        "world_concepts" |
+        "world_events" |
+        "world_threads"
+    >>
 ) {
     const db = await getDB();
     const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
@@ -114,6 +96,32 @@ export async function updateGameStatus(
         ...(stats ?? {}),
     };
     if (status === "ready") patch.launched_at = new Date().toISOString();
+    return db.query(
+        `UPDATE type::thing($id) SET ${Object.keys(patch).map(k => `${k} = $${k}`).join(", ")}`,
+        { id: recordId, ...patch }
+    );
+}
+
+export async function updateGameInfo(
+    gameId: string,
+    info: {
+        description?: string;
+        genre?: string;
+        tags?: string[];
+        cost_tier?: CostTier;
+        cost?: number;
+    }
+) {
+    const db = await getDB();
+    const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
+    const patch: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+    };
+    if (info.description !== undefined) patch.description = info.description;
+    if (info.genre !== undefined) patch.genre = info.genre;
+    if (info.tags !== undefined) patch.tags = info.tags;
+    if (info.cost_tier !== undefined) patch.cost_tier = info.cost_tier;
+    if (info.cost !== undefined) patch.cost = info.cost;
     return db.query(
         `UPDATE type::thing($id) SET ${Object.keys(patch).map(k => `${k} = $${k}`).join(", ")}`,
         { id: recordId, ...patch }
@@ -142,6 +150,14 @@ export async function getPlayerGames(creatorId: string): Promise<GameRecord[]> {
     return rows ?? [];
 }
 
+export async function getPublicGames(): Promise<GameRecord[]> {
+    const db = await getDB();
+    const [rows] = await db.query<[GameRecord[]]>(
+        `SELECT * FROM game WHERE visibility = 'public' AND status = 'ready' ORDER BY created_at DESC LIMIT 12`
+    );
+    return rows ?? [];
+}
+
 export async function upsertEntityAsset(
     gameId: string,
     loreNodeId: string,
@@ -165,4 +181,26 @@ export async function getEntityAssets(gameId: string) {
         { gameId }
     );
     return rows ?? [];
+}
+
+export async function getPlayerDisplayName(playerId: string): Promise<string> {
+    const db = await getDB();
+    const normalizedId = playerId.includes(":")
+        ? playerId.slice(playerId.indexOf(":") + 1)
+        : playerId;
+
+    const [rows] = await db.query<[{ display_name: string }[]]>(
+        `SELECT display_name FROM player WHERE id = type::thing('player', $id)`,
+        { id: normalizedId }
+    );
+    return rows?.[0]?.display_name ?? "Unknown Creator";
+}
+
+export async function updateGameCreatedBy(gameId: string, createdBy: string) {
+    const db = await getDB();
+    const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
+    return db.query(
+        `UPDATE type::thing($id) SET created_by = $createdBy, visibility = 'public', status = 'ready', updated_at = time::now()`,
+        { id: recordId, createdBy }
+    );
 }

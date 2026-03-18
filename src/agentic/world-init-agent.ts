@@ -18,14 +18,33 @@
 //   • world_edge   — AT / LEADS_TO / HOLDS / AWARE_OF edges that wire
 //                    everything together spatially and relationally
 //
-// The agent also places the PLAYER actor at their starting location and
+// The agent also places the PLAYER agent at their starting location and
 // marks which items and NPCs are immediately visible to them.
 
 import { Agent } from "@mastra/core/agent";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { getDB } from "../libs/surreal";
-import { WorldActor, WorldLocation, WorldItem, WorldThread, LoreNode, WorldInitReport, IngestionProgress } from "../libs/types";
-import { writeActorTool, writeLocationTool, writeItemTool, writeThreadTool, writeEdgeTool } from "./tools";
+import {
+    WorldAgent,
+    WorldLocation,
+    WorldItem,
+    WorldConcept,
+    WorldEvent,
+    WorldThread,
+    LoreNode,
+    WorldInitReport,
+    IngestionProgress
+} from "../libs/types";
+import {
+    writeAgentTool,
+    writeLocationTool,
+    writeItemTool,
+    writeThreadTool,
+    writeEdgeTool,
+    writeConceptTool,
+    writeEventTool
+} from "./tools";
+
 
 const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
 
@@ -35,7 +54,7 @@ export function buildWorldInitAgent(): Agent {
     return new Agent({
         id: "world-init-agent",
         name: "world-init-agent",
-        model: openrouter("openrouter/healer-alpha"),
+        model: openrouter("minimax/minimax-m2.5"),
         instructions: `
 You are the World Initialization Agent for the ACE Narrative Engine.
 Your job is to take a completed Lore Graph and initialize the live World Graph —
@@ -45,14 +64,18 @@ You have five tools:
 1. write_world_actor   — place each character/NPC in a starting location with goals
 2. write_world_location — create each location with atmosphere + hidden secrets
 3. write_world_item    — place each item with its holder or location
-4. write_world_thread  — open narrative threads from unresolved tensions
-5. write_world_edge    — wire entities together with spatial/relational edges
+4. write_world_concept — create each concept with its properties
+5. write_world_event   — create each event with its properties
+6. write_world_thread  — open narrative threads from unresolved tensions
+7. write_world_edge    — wire entities together with spatial/relational edges
 
 STRICT RULES:
-- Write ALL locations FIRST (actors and items reference them)
-- Write ALL actors SECOND (items and edges reference them)
-- Write ALL items THIRD
-- Write ALL threads FOURTH (they reference actors + locations)
+- Write ALL locations FIRST (agents and items reference them)
+- Write ALL agents SECOND (items and edges reference them)
+- Write ALL events THIRD (they reference agents + locations)
+- Write ALL items FOURTH (they reference agents + locations)
+- Write ALL concepts FIFTH
+- Write ALL threads SIXTH (they reference agents + locations)
 - Write ALL edges LAST
 
 WHAT TO DERIVE FOR EACH ENTITY TYPE:
@@ -75,6 +98,18 @@ world_item:
   - known_to_player=true only if the item is publicly known or the player owns it
   - If an item is held by an NPC who is at a location, set both holder_actor AND location
 
+world_concept:
+  - kind: "lore" | "game" | "narrative"
+  - name: the concept name
+  - description: a concise explanation of what this concept means in the game world
+  - properties: any relevant properties of the concept
+
+world_event:
+  - kind: "lore" | "game" | "narrative"
+  - name: the event name
+  - description: a concise explanation of what this event means in the game world
+  - properties: any relevant properties of the event
+
 world_thread:
   - One thread per major unresolved tension from History & Secrets
   - tension: how narratively charged is this right now (0-1)
@@ -82,11 +117,11 @@ world_thread:
   - consequence_seeds: concrete things that happen if the player ignores this thread
 
 world_edge:
-  - AT: every actor at their starting location
+  - AT: every agent at their starting location
   - LEADS_TO (bidirectional): every traversable path between locations
-  - HOLDS: actors who currently carry items
+  - HOLDS: agents who currently carry items
   - AWARE_OF: NPCs who know about other NPCs or items (with weight = how well they know)
-  - GUARDS: actors or factions that block access to a location/item
+  - GUARDS: agents or factions that block access to a location/item
 
 Place the protagonist (kind="player") in a narratively interesting starting position —
 ideally where multiple threads intersect and multiple NPCs are nearby.
@@ -94,9 +129,11 @@ ideally where multiple threads intersect and multiple NPCs are nearby.
 After writing everything, briefly summarize the starting world state.
     `.trim(),
         tools: {
-            write_world_actor: writeActorTool,
+            write_world_agent: writeAgentTool,
             write_world_location: writeLocationTool,
             write_world_item: writeItemTool,
+            write_world_concept: writeConceptTool,
+            write_world_event: writeEventTool,
             write_world_thread: writeThreadTool,
             write_world_edge: writeEdgeTool,
         },
@@ -135,8 +172,10 @@ Instructions:
 1. Write all world_locations (every named place)
 2. Write all world_actors (every named character, including the protagonist)
 3. Write all world_items (every named artifact/item)
-4. Write world_threads for every unresolved tension from the Secrets section
-5. Write world_edges: AT (actor→location), LEADS_TO (location↔location), HOLDS (actor→item), AWARE_OF, GUARDS
+4. Write all world_concepts (every named concept)
+5. Write all world_events (every named event)
+6. Write world_threads for every unresolved tension from the Secrets section
+7. Write world_edges: AT (actor→location), LEADS_TO (location↔location), HOLDS (actor→item), AWARE_OF, GUARDS
 
 Place the player character at a narratively rich starting position.
 After finishing all writes, summarize the starting world state in 2-3 sentences.
@@ -149,41 +188,55 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
     onProgress?.({ phase: "world_init", message: "Collecting world graph results…", percent: 88 });
 
     // Collect results
-    const [actors] = await db.query<[WorldActor[]]>(`SELECT id, name, kind, disposition, goal_current, location_id FROM world_actor`);
+    const [agents] = await db.query<[WorldAgent[]]>(`SELECT id, name, kind, disposition, goal_current, location_id FROM world_agent`);
     const [locations] = await db.query<[WorldLocation[]]>(`SELECT id, name, region, danger_level, accessible, secrets FROM world_location`);
     const [items] = await db.query<[WorldItem[]]>(`SELECT id, name, holder_actor, location_id, known_to_player FROM world_item`);
+    const [concepts] = await db.query<[WorldConcept[]]>(`SELECT id, name, description, emotional_valence, narrative_weight FROM world_concept`);
+    const [events] = await db.query<[WorldEvent[]]>(`SELECT id, name, description, participants, location_id FROM world_event`);
     const [threads] = await db.query<[WorldThread[]]>(`SELECT id, name, tension, urgency FROM world_thread WHERE session_id = 'WORLD_INIT'`);
     const [edges] = await db.query<[{ count: number }[]]>(`SELECT count() AS count FROM world_edge GROUP ALL`);
 
-    console.log("[world-init] agent response:", response.text.slice(0, 500));
-    console.log("[world-init] actors from DB:", actors?.length, actors?.[0]);
-    console.log("[world-init] locations from DB:", locations?.length, locations?.[0]);
-    console.log("[world-init] items from DB:", items?.length, items?.[0]);
-    console.log("[world-init] threads from DB:", threads?.length, threads?.[0]);
-    console.log("[world-init] edges from DB:", edges?.length, edges?.[0]);
+    // console.log("[world-init] agent response:", response.text.slice(0, 500));
+    // console.log("[world-init] agents from DB:", agents?.length, agents?.[0]);
+    // console.log("[world-init] locations from DB:", locations?.length, locations?.[0]);
+    // console.log("[world-init] items from DB:", items?.length, items?.[0]);
+    // console.log("[world-init] threads from DB:", threads?.length, threads?.[0]);
+    // console.log("[world-init] edges from DB:", edges?.length, edges?.[0]);
 
-    // Resolve location names for actor placement display
+    // Resolve location names for agent placement display
     const locationMap: Record<string, string> = {};
     for (const loc of (locations ?? [])) {
         locationMap[String(loc.id)] = loc.name;
     }
 
-    const actorMap: Record<string, string> = {};
-    for (const a of (actors ?? [])) {
-        actorMap[String(a.id)] = a.name;
+    const agentMap: Record<string, string> = {};
+    for (const a of (agents ?? [])) {
+        agentMap[String(a.id)] = a.name;
     }
 
-    const playerActor = (actors ?? []).find(a => a.kind === "player");
+    const conceptMap: Record<string, string> = {};
+    for (const c of (concepts ?? [])) {
+        conceptMap[String(c.id)] = c.name;
+    }
+
+    const eventMap: Record<string, string> = {};
+    for (const e of (events ?? [])) {
+        eventMap[String(e.id)] = e.name;
+    }
+
+    const playerAgent = (agents ?? []).find(a => a.kind === "player");
 
     // Check for warnings
     const warnings: string[] = [];
-    if ((actors ?? []).length === 0) warnings.push("No actors were written — check agent tool calls");
+    if ((agents ?? []).length === 0) warnings.push("No agents were written — check agent tool calls");
     if ((locations ?? []).length === 0) warnings.push("No locations were written");
     if ((items ?? []).length === 0) warnings.push("No items were written");
-    if (!playerActor) warnings.push("No actor with kind='player' was created");
+    if ((concepts ?? []).length === 0) warnings.push("No concepts were written");
+    if ((events ?? []).length === 0) warnings.push("No events were written");
+    if (!playerAgent) warnings.push("No agent with kind='player' was created");
 
     return {
-        actorsPlaced: (actors ?? []).map(a => ({
+        agentsPlaced: (agents ?? []).map(a => ({
             world_id: String(a.id),
             lore_name: a.name,
             kind: a.kind,
@@ -202,9 +255,24 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
         itemsPlaced: (items ?? []).map(i => ({
             world_id: String(i.id),
             lore_name: i.name,
-            holder: i.holder_actor ? actorMap[i.holder_actor] : undefined,
+            holder: i.holder_actor ? agentMap[i.holder_actor] : undefined,
             location: i.location_id ? locationMap[i.location_id] : undefined,
             known_to_player: i.known_to_player,
+        })),
+        conceptsCreated: (concepts ?? []).map(c => ({
+            world_id: String(c.id),
+            lore_name: c.name,
+            description: c.description,
+            emotional_valence: c.emotional_valence,
+            swarm_coherence: c.swarm_coherence,
+        })),
+        eventsCreated: (events ?? []).map(e => ({
+            world_id: String(e.id),
+            lore_name: e.name,
+            description: e.description,
+            location: e.location_id ? locationMap[e.location_id] : undefined,
+            participant_count: (e.participants ?? []).length,
+            significance: e.significance,
         })),
         threadsOpened: (threads ?? []).map(t => ({
             world_id: String(t.id),
@@ -213,7 +281,7 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
             urgency: t.urgency,
         })),
         edgesCreated: edges?.[0]?.count ?? 0,
-        playerStartLocation: playerActor ? (locationMap[playerActor.location_id] ?? "unknown") : "unplaced",
+        playerStartLocation: playerAgent ? (locationMap[playerAgent.location_id] ?? "unknown") : "unplaced",
         warnings,
         summary: response.text,
         completedAt: new Date().toISOString(),

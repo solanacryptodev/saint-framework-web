@@ -30,7 +30,14 @@
 }
 
 .game-section {
-  margin-bottom: 3.5rem;
+  margin-bottom: 2rem;
+}
+
+.section-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+  margin: 1.5rem 0;
 }
 
 .section-title {

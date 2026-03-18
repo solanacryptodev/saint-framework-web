@@ -1,104 +1,133 @@
 import GameLayout from './GameLayout';
-import CharacterPanel, { type CharacterPanelProps } from './CharacterPanel';
-import NarrativePanel, { type NarrativePanelProps } from './NarrativePanel';
-import GeoPanel, { type GeoPanelProps } from './GeoPanel';
+import AgentProfile, { type AgentProfileProps } from './AgentProfile';
+import MissionPanel, { type MissionPanelProps } from './MissionPanel';
+import SiteIntelligence, { type SiteIntelligenceProps } from './SiteIntelligence';
 import './GeneralGame.css';
 
 export interface GeneralGameProps {
-    characterData?: CharacterPanelProps;
-    narrativeData?: NarrativePanelProps;
-    geoData?: GeoPanelProps;
+    agentData?: AgentProfileProps;
+    missionData?: MissionPanelProps;
+    intelData?: SiteIntelligenceProps;
     onBack?: () => void;
 }
 
-// Default data based on the reference image for "The Serpent and The Spy"
-const defaultCharacterData: CharacterPanelProps = {
-    name: 'Cipher // Null',
-    className: 'SWARM_ARCHITECT',
-    systemStatus: {
-        integrity: 88,
-        energy: 64
+// Default data based on the reference image for spy/espionage theme
+const defaultAgentData: AgentProfileProps = {
+    name: 'AGENT CIPHER',
+    clearance: 'BLACK DIAMOND',
+    operativeStatus: {
+        narrativeWeight: 0.78,
+        emotionalState: -0.31,
+        influenceReach: 0.62
     },
-    coreStats: {
-        processing: 14,
-        bandwidth: 22,
-        encryption: 18,
-        signal: 9
+    psychologicalProfile: {
+        traumaIndex: 0.42,
+        resolve: 0.23,
+        curiosity: 0.81
     },
-    swarmNodes: 18,
-    swarmActive: true
+    ideologicalAlignment: {
+        classifiedIntel: 0.89,
+        protocolOverride: 0.74,
+        chainOfCommand: -0.65,
+        selfPreservation: 0.52
+    },
+    susceptibilityVector: {
+        moral: 0.71,
+        method: 0.48,
+        social: 0.39
+    },
+    actionPoints: {
+        current: 82,
+        max: 100
+    }
 };
 
-const defaultNarrativeData: NarrativePanelProps = {
-    sectorNumber: 7,
-    sectorTitle: 'THE ABYSSAL ARCHIVE',
-    dataStream: '0X4B2C',
+const defaultMissionData: MissionPanelProps = {
+    locationName: 'BLACK SITE OMEGA-7',
+    phase: 'INFILTRATION',
+    status: 'ACTIVE',
     paragraphs: [
-        'The hyper-cooling fluid sloshes against your armored shins as you step into the vast, cavernous data center. Giant monolithic server towers rise from the dark water, their status lights blinking in a synchronized, hypnotic teal rhythm. The air is frigid, carrying the metallic taste of raw computation.',
-        'Your HUD flickers as interference washes over your optic nerves. At the center of the chamber, suspended by thick, armored cables, hangs the Core Terminal. It is completely submerged in a containment field of dense coolant.',
-        '"Detecting multiple sub-routines activating in the fluid," your Swarm intelligence whispers directly into your auditory cortex. The voice is a chorus of microscopic voices. "The archive is defending itself. Environmental hazards are increasing."',
-        'You notice a thick bundle of severed optic fibers dangling near a catwalk to your right, sparking wildly and illuminating the dark water below. The liquid around the Core Terminal begins to churn.'
+        'The elevator descends past the official basement levels, through reinforced concrete and into bedrock. Your credentials—meticulously forged by the agency\'s best—got you past the lobby security, but down here, biometrics rule.',
+        'The facility hums with the white noise of server farms cooling systems. Somewhere in this labyrinth of classified projects and buried secrets lies the proof you need: evidence of Operation Nightfall, the black program they swore never existed.',
+        'A security terminal flickers at the corridor junction ahead. Its screen casts harsh light on the polished floor, and beyond it, a guard station manned by two armed operatives. They haven\'t seen you yet.'
     ],
-    emphasisWords: ['teal rhythm', 'Core Terminal', 'defending itself', 'churn'],
-    actions: [
+    emphasisWords: ['biometrics rule', 'Operation Nightfall', 'armed operatives'],
+    activeThreat: {
+        name: 'Security Checkpoint Alpha',
+        threatLevel: '[T:0.6 H:0.1 M:0.9]',
+        exposureRisk: 0.38,
+        intelSeed: '{suspicion: 0.7, danger: 0.8}'
+    },
+    operations: [
         {
             id: '1',
             sequence: 1,
-            title: 'Wade into the fluid and interface with the Core Terminal directly.',
-            requirement: 'PROCESSING CHECK'
+            title: 'Neutralize guards with close-quarters takedown',
+            method: 'METHOD',
+            methodBonus: 0.3,
+            risk: 'HIGH'
         },
         {
             id: '2',
             sequence: 2,
-            title: 'Deploy the Swarm to bridge the severed optic fibers.',
-            requirement: 'SWARM_LINK REQUIRED'
+            title: 'Deploy electronic countermeasures to disable cameras',
+            method: 'SOCIAL',
+            methodBonus: 0.2,
+            risk: 'MODERATE',
+            requirement: 'TECH CHECK REQUIRED'
         },
         {
             id: '3',
             sequence: 3,
-            title: 'Scan the churning fluid for defensive countermeasures.',
-            requirement: 'SIGNAL CHECK'
+            title: 'Use forged credentials and bluff past checkpoint',
+            method: 'MORAL',
+            methodBonus: 0.15,
+            risk: 'MODERATE'
         },
         {
             id: '4',
             sequence: 4,
-            title: 'Ignore the Core and proceed to the elevated catwalk.',
-            requirement: 'EVASION'
+            title: 'Find alternate route through ventilation system',
+            method: 'METHOD',
+            methodBonus: -0.1,
+            risk: 'LOW'
         }
     ]
 };
 
-const defaultGeoData: GeoPanelProps = {
-    geoData: {
-        locationName: 'The Abyssal Archive',
-        subLevel: 'Sub-Level // Deep Archive',
-        description: 'A flooded containment sector meant to preserve pre-collapse military algorithms. Temperatures are lethal to baseline humans.'
+const defaultIntelData: SiteIntelligenceProps = {
+    subLevel: 'SUB-LEVEL 4 // ARCHIVE WING',
+    description: '"A classified archive housing decades of black operations data. Motion sensors active. Thermal imaging suspected."',
+    environmentalAnalysis: {
+        threatSignature: '[T:0.7 H:0.1 M:0.9]',
+        tension: -0.54,
+        coverRating: 0.15
     },
-    proximityScan: {
-        count: 1,
-        alerts: [
-            {
-                id: '1',
-                name: 'Core Terminal',
-                status: 'DEFENSIVE',
-                icon: 'warning'
-            }
-        ]
-    },
-    dataCache: {
-        items: [
-            { id: '1', icon: 'lightning', active: true },
-            { id: '2', icon: 'shield', active: false },
-            { id: '3', icon: 'document', active: false },
-            { id: '4', icon: 'wifi', active: true }
-        ]
-    }
+    locationMemory: [
+        { id: '1', name: 'classified_ops', value: 0.82 },
+        { id: '2', name: 'surveillance', value: 0.71 },
+        { id: '3', name: 'lethal_force', value: 0.68 }
+    ],
+    proximityScan: [
+        {
+            id: '1',
+            name: 'Security Detail',
+            threatLevel: 0.85,
+            awareness: 0.72,
+            status: 'HOSTILE'
+        }
+    ],
+    activeProtocols: [
+        { id: '1', name: 'LOCKDOWN_READY', value: 0.79 },
+        { id: '2', name: 'ASSET_PROTECTION', value: 0.61 },
+        { id: '3', name: 'PATROL_FREQUENCY', value: 0.54 }
+    ]
 };
 
 export default function GeneralGame(props: GeneralGameProps) {
-    const characterData = props.characterData ?? defaultCharacterData;
-    const narrativeData = props.narrativeData ?? defaultNarrativeData;
-    const geoData = props.geoData ?? defaultGeoData;
+    const agentData = props.agentData ?? defaultAgentData;
+    const missionData = props.missionData ?? defaultMissionData;
+    const intelData = props.intelData ?? defaultIntelData;
 
     return (
         <div class="general-game">
@@ -113,9 +142,9 @@ export default function GeneralGame(props: GeneralGameProps) {
                 </div>
             )}
             <GameLayout
-                characterPanel={<CharacterPanel {...characterData} />}
-                narrativePanel={<NarrativePanel {...narrativeData} />}
-                geoPanel={<GeoPanel {...geoData} />}
+                agentPanel={<AgentProfile {...agentData} />}
+                missionPanel={<MissionPanel {...missionData} />}
+                intelPanel={<SiteIntelligence {...intelData} />}
             />
         </div>
     );

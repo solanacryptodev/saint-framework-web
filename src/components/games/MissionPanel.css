@@ -1,0 +1,250 @@
+.mission-panel {
+    background: linear-gradient(180deg, rgba(15, 12, 8, 0.98) 0%, rgba(10, 8, 5, 0.99) 100%);
+    border: 1px solid rgba(218, 165, 32, 0.25);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Tomorrow', sans-serif;
+}
+
+/* Header */
+.mission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(218, 165, 32, 0.15);
+    background: rgba(218, 165, 32, 0.03);
+}
+
+.location-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.location-info svg {
+    color: rgba(218, 165, 32, 0.7);
+}
+
+.location-name {
+    font-family: 'Goldman', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f4e4c1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.mission-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+}
+
+.phase {
+    color: rgba(218, 165, 32, 0.7);
+}
+
+.status-divider {
+    color: rgba(218, 165, 32, 0.3);
+}
+
+.status {
+    color: rgba(100, 200, 130, 0.9);
+}
+
+/* Narrative Content */
+.mission-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    overflow: hidden;
+}
+
+.narrative-scroll {
+    flex: 1;
+    overflow-y: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.narrative-paragraph {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(220, 200, 170, 0.85);
+    margin: 0;
+}
+
+.narrative-paragraph :global(.emphasis) {
+    color: rgba(220, 80, 80, 0.95);
+    font-weight: 500;
+}
+
+/* Active Threat Section */
+.active-threat {
+    margin: 0 1.5rem;
+    padding: 1rem;
+    background: rgba(220, 80, 80, 0.05);
+    border: 1px solid rgba(220, 80, 80, 0.2);
+    border-radius: 4px;
+}
+
+.threat-header {
+    margin-bottom: 0.75rem;
+}
+
+.threat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: rgba(220, 80, 80, 0.7);
+    font-weight: 600;
+}
+
+.threat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.threat-name {
+    font-family: 'Goldman', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(244, 228, 193, 0.95);
+    letter-spacing: 0.05em;
+}
+
+.threat-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.threat-level,
+.exposure-risk,
+.intel-seed {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+}
+
+.detail-label {
+    color: rgba(200, 180, 140, 0.6);
+    letter-spacing: 0.05em;
+    min-width: 100px;
+}
+
+.detail-value {
+    font-family: 'Goldman', sans-serif;
+    color: rgba(218, 165, 32, 0.9);
+    font-weight: 600;
+}
+
+.risk-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(220, 80, 80, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+    max-width: 100px;
+}
+
+.risk-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(220, 80, 80, 0.8) 0%, rgba(180, 60, 60, 0.6) 100%);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+/* Operations Section */
+.operations-section {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(218, 165, 32, 0.1);
+}
+
+.operations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Scrollbar styling */
+.narrative-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.narrative-scroll::-webkit-scrollbar-track {
+    background: rgba(218, 165, 32, 0.05);
+    border-radius: 3px;
+}
+
+.narrative-scroll::-webkit-scrollbar-thumb {
+    background: rgba(218, 165, 32, 0.2);
+    border-radius: 3px;
+}
+
+.narrative-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(218, 165, 32, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .mission-header {
+        padding: 0.875rem 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .mission-content {
+        padding: 1rem;
+    }
+
+    .narrative-paragraph {
+        font-size: 0.9rem;
+    }
+
+    .active-threat {
+        margin: 0 1rem;
+    }
+
+    .operations-section {
+        padding: 1rem;
+    }
+
+    .operations-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .location-name {
+        font-size: 0.95rem;
+    }
+
+    .mission-status {
+        font-size: 0.6rem;
+    }
+
+    .narrative-paragraph {
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+
+    .threat-details {
+        font-size: 0.65rem;
+    }
+
+    .detail-label {
+        min-width: 80px;
+    }
+}

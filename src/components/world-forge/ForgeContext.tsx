@@ -325,10 +325,8 @@ export const ForgeProvider: ParentComponent = (props) => {
 
         setStage("launched");
 
-        // Derive the slug from the world name — matches GameCard.handleShowMore
-        const slug = worldName().toLowerCase().replace(/[^a-z0-9]+/g, "-");
         setTimeout(() => {
-            navigate(`/play/game/${slug}/play`, { state: { gameId: id } });
+            navigate("/play");
         }, 2000);
     };
 

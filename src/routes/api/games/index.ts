@@ -9,12 +9,14 @@ import { guardRoute } from "~/libs/session";
 import { createGame, getPlayerGames } from "~/libs/game";
 
 export async function GET(event: APIEvent) {
+    console.log('GET /api/games');
     const playerOrResponse = await guardRoute(event.request);
     if (playerOrResponse instanceof Response) return playerOrResponse;
     const player = playerOrResponse;
 
     try {
         const games = await getPlayerGames(player.id);
+        console.log('games', games);
         return new Response(JSON.stringify({ games }), {
             headers: { "Content-Type": "application/json" },
         });

@@ -16,7 +16,7 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { ingestLoreBible } from "~/agentic/lore-ingestion-agent";
 import { guardRoute } from "~/libs/session";
-import { getGame, updateGameStatus } from "~/libs/game";
+import { getGame, updateGameStatus, updateGameInfo, getPlayerDisplayName, updateGameCreatedBy } from "~/libs/game";
 import { getDB } from "~/libs/surreal";
 import type { IngestionProgress } from "~/libs/types";
 
@@ -61,9 +61,9 @@ export async function POST(event: APIEvent) {
         const game = await getGame(gameId);
         if (!game) return new Response(JSON.stringify({ error: "Game not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
         // Normalize both IDs — SurrealDB may return RecordId objects or "table:id" strings
-        console.log("game.creator_id", game.creator_id);
-        console.log("player.id", player.id);
-        console.log("normalized", normalizeId(game.creator_id), normalizeId(player.id));
+        // console.log("game.creator_id", game.creator_id);
+        // console.log("player.id", player.id);
+        // console.log("normalized", normalizeId(game.creator_id), normalizeId(player.id));
         if (normalizeId(game.creator_id) !== normalizeId(player.id)) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
         await updateGameStatus(gameId, "initializing");
     }
@@ -86,9 +86,22 @@ export async function POST(event: APIEvent) {
                     await updateGameStatus(gameId, "review", {
                         lore_nodes: report.nodesWritten.length,
                         lore_edges: report.edgesWritten.length,
-                        world_actors: report.worldReport?.actorsPlaced.length ?? 0,
+                        world_agents: report.worldReport?.agentsPlaced.length ?? 0,
+                        world_locations: report.worldReport?.locationsCreated.length ?? 0,
+                        world_items: report.worldReport?.itemsPlaced.length ?? 0,
+                        world_concepts: report.worldReport?.conceptsCreated.length ?? 0,
+                        world_events: report.worldReport?.eventsCreated.length ?? 0,
                         world_threads: report.worldReport?.threadsOpened.length ?? 0,
                     });
+
+                    // Apply parsed game info (description, genre, tags) from lore bible
+                    if (report.gameInfo) {
+                        await updateGameInfo(gameId, report.gameInfo);
+                    }
+
+                    // Update created_by with player's display name
+                    const displayName = await getPlayerDisplayName(player.id);
+                    await updateGameCreatedBy(gameId, displayName);
                 }
 
                 send({ type: "complete", report });
