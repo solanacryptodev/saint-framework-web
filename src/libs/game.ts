@@ -155,7 +155,6 @@ export async function getPublicGames(): Promise<GameRecord[]> {
     const [rows] = await db.query<[GameRecord[]]>(
         `SELECT * FROM game WHERE visibility = 'public' AND status = 'ready' ORDER BY created_at DESC LIMIT 12`
     );
-    console.log('[getPublicGames] rows:', rows);
     return rows ?? [];
 }
 

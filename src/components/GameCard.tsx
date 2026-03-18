@@ -12,7 +12,7 @@
 //      The slug in the URL is cosmetic — data travels via state.
 
 import { createSignal } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
+import { A } from '@solidjs/router';
 import './GameCard.css';
 
 export interface GameCardData {
@@ -29,6 +29,10 @@ export interface GameCardData {
   // Added: SurrealDB record ID — populated when game comes from the API,
   // undefined for mock data. The slug fallback handles the undefined case.
   gameId?: string;
+  description?: string;
+  createdBy?: string;
+  tagline?: string;
+  tags?: string[];
 }
 
 interface GameCardProps {
@@ -36,7 +40,6 @@ interface GameCardProps {
 }
 
 export default function GameCard(props: GameCardProps) {
-  const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = createSignal(false);
 
   const toggleFavorite = (e: MouseEvent) => {
@@ -44,18 +47,8 @@ export default function GameCard(props: GameCardProps) {
     setIsFavorited(!isFavorited());
   };
 
-  const handleShowMore = () => {
-    const gameSlug = props.game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    // Pass the full record through location state.
-    // GameDetail and play.tsx read gameId from here — no slug lookup needed.
-    // If gameId is undefined (mock data), the slug fallback in index.tsx fires.
-    navigate(`/play/game/${gameSlug}`, {
-      state: {
-        gameId: props.game.gameId,
-        game: props.game,
-      },
-    });
+  const getGameSlug = () => {
+    return (props.game.title || 'game').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   };
 
   return (
@@ -133,9 +126,16 @@ export default function GameCard(props: GameCardProps) {
           )}
         </div>
 
-        <button class="show-more-btn" onClick={handleShowMore}>
+        <A
+          class="show-more-btn"
+          href={`/play/game/${getGameSlug()}`}
+          state={{
+            gameId: props.game.gameId,
+            game: props.game,
+          }}
+        >
           Show More
-        </button>
+        </A>
       </div>
     </div>
   );

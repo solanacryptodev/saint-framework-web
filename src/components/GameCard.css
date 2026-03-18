@@ -146,6 +146,8 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: block;
+  text-align: center;
 }
 
 .show-more-btn:hover {

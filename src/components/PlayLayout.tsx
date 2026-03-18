@@ -1,49 +1,12 @@
-"use client";
-// src/components/PlayLayout.tsx
-
-import { createSignal, For, Show, Suspense } from 'solid-js';
-import { createAsync, cache } from '@solidjs/router';
+import { createSignal, onMount, For, Show, Suspense } from 'solid-js';
 import { useAuth } from '~/libs/AuthProvider';
 import GameSidebar from './GameSidebar';
 import Carousel from './Carousel';
 import GameCard, { type GameCardData } from './GameCard';
 import './PlayLayout.css';
+import { fetchPublicGamesServer } from '~/libs/serverGames';
 
-// ── Server action ───────────────────────────────────────────────────────────
-// cache() + "use server" means this runs in the server process on SSR
-// and is called via RPC on subsequent client navigations.
-// This avoids the relative-URL fetch problem (fetch('/api/...') fails on server).
-
-const loadPublicGames = cache(async (): Promise<GameCardData[]> => {
-  "use server";
-  try {
-    const { getPublicGames } = await import('~/libs/game');
-    const records = await getPublicGames();
-    const now = Date.now();
-    return records.map(g => {
-      const idStr = (g.id as any)?.toString?.() ?? String(g.id);
-      return {
-        id: idStr,
-        cost: g.cost,
-        gameId: idStr,
-        title: g.name,
-        image: g.cover_image ?? undefined,
-        created: g.created_at ? new Date(g.created_at).toLocaleDateString('en-US') : '—',
-        players: 0,
-        swarmSize: g.world_agents ?? 0,
-        genre: g.genre || 'Adventure',
-        price: undefined,
-        isFree: true,
-        isNew: g.created_at
-          ? (now - new Date(g.created_at).getTime()) < 1000 * 60 * 60 * 24 * 14
-          : false,
-      };
-    });
-  } catch (e) {
-    console.error('[loadPublicGames] error:', e);
-    return [];
-  }
-}, 'public-games');
+const [globalPublicGames, setGlobalPublicGames] = createSignal<GameCardData[] | null>(null);
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -51,12 +14,21 @@ export default function PlayLayout() {
   const { isAuthenticated } = useAuth();
   const [activeView, setActiveView] = createSignal('games');
 
-  // createAsync works during SSR and client-side — no relative URL problem.
-  const apiPublicGames = createAsync(() => loadPublicGames());
+  onMount(async () => {
+    // If we've already fetched games successfully in this session, keep them!
+    if (globalPublicGames() !== null) return;
+    try {
+      const res = await fetchPublicGamesServer();
+      setGlobalPublicGames(res);
+    } catch (e) {
+      console.error("Failed to load DB games", e);
+      setGlobalPublicGames([]);
+    }
+  });
 
-  // Fall back to mock data while loading or if DB returns empty.
+  // Fall back to stale data or mock data while loading or if DB returns empty.
   const publicGames = () => {
-    const loaded = apiPublicGames();
+    const loaded = globalPublicGames();
     return loaded && loaded.length > 0 ? loaded : mockPublicGames;
   };
 

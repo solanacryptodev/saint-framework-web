@@ -249,16 +249,24 @@
   padding: 1rem 0;
 }
 
-.price-icon {
+.price-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.price-section .price-icon {
   color: var(--gold-primary);
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .price {
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--gold-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   font-family: 'Goldman', sans-serif;
 }
 
@@ -274,14 +282,14 @@
 
 .free-section .price-icon {
   color: var(--gold-primary);
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .free-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--gold-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   font-family: 'Goldman', sans-serif;
 }
 

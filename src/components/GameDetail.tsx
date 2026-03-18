@@ -33,9 +33,9 @@ export default function GameDetail(props: GameDetailProps) {
   // Use real game data from props, fallback to mock data
   const gameData = {
     title: gameTitle,
-    tagline: props.game?.tagline ?? '',
-    description: props.game?.description ?? 'Embark on a limitless journey across the cosmos. Pilot your vessel through treacherous asteroid fields, engage in tactical fleet battles, and uncover the mysteries of the Aetherium Core.',
-    developer: props.game?.created_by ?? 'Unknown Creator',
+    tagline: props.game?.tagline || '',
+    description: props.game?.description || 'Embark on a limitless journey across the cosmos. Pilot your vessel through treacherous asteroid fields, engage in tactical fleet battles, and uncover the mysteries of the Aetherium Core.',
+    developer: props.game?.created_by || 'Unknown Creator',
     rating: 4.8,
     reviews: 1024,
     releaseDate: props.game?.created_at
@@ -47,7 +47,7 @@ export default function GameDetail(props: GameDetailProps) {
     isFree: props.game?.cost_tier === 'free' || (props.game?.cost ?? 0) === 0,
     price: props.game?.cost ? props.game.cost / 100 : 29.99,
     players: 4092,
-    swarmSize: props.game?.world_agents ?? 500,
+    swarmSize: props.game?.world_agents || 500,
     genre: props.game?.genre || 'Sci-Fi MMO',
     images: ['/placeholder1.jpg', '/placeholder2.jpg', '/placeholder3.jpg'],
     features: [
@@ -187,10 +187,12 @@ export default function GameDetail(props: GameDetailProps) {
               fallback={
                 <>
                   <div class="price-section">
-                    <svg class="price-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <div class="price">${gameData.price}</div>
+                    <div class="price-header-row">
+                      <svg class="price-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      <div class="price">${gameData.price}</div>
+                    </div>
                     <div class="price-label">One-time purchase</div>
                   </div>
                   <button class="buy-now-btn" onClick={handleBuyNow}>
@@ -203,10 +205,12 @@ export default function GameDetail(props: GameDetailProps) {
               }
             >
               <div class="free-section">
-                <svg class="price-icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 12v10H4V12h16zm0-2H4V7h16v3zm-8 6h6v-2h-6v2zm0 3h6v-2h-6v2zm-4-3h2v-2H8v2zm0 3h2v-2H8v2zM4 3h16a2 2 0 0 1 2 2v1H2V5a2 2 0 0 1 2-2z" />
-                </svg>
-                <div class="free-title">FREE TO PLAY</div>
+                <div class="price-header-row">
+                  <svg class="price-icon" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 12v10H4V12h16zm0-2H4V7h16v3zm-8 6h6v-2h-6v2zm0 3h6v-2h-6v2zm-4-3h2v-2H8v2zm0 3h2v-2H8v2zM4 3h16a2 2 0 0 1 2 2v1H2V5a2 2 0 0 1 2-2z" />
+                  </svg>
+                  <div class="free-title">FREE TO PLAY</div>
+                </div>
                 <div class="free-subtitle">No purchase required</div>
               </div>
               <button class="play-now-btn">Play Now</button>
