@@ -266,6 +266,59 @@ export async function applySchema(db: Surreal) {
     -- Indexes
     DEFINE INDEX IF NOT EXISTS world_concept_name ON world_concept COLUMNS name;
     DEFINE INDEX IF NOT EXISTS world_concept_coherence ON world_concept COLUMNS swarm_coherence;
+
+    -- ═══════════════════════════════════════════════════════════════════════════
+    -- WORLD FACTION - Groups that propagate through the swarm
+    -- Factions spread, mutate, and become dominant ideologies when swarm_coherence > 0.75
+    -- ═══════════════════════════════════════════════════════════════════════════
+
+    DEFINE TABLE IF NOT EXISTS world_faction SCHEMAFULL;
+    DEFINE FIELD IF NOT EXISTS lore_ref                  ON world_faction TYPE string;
+    DEFINE FIELD IF NOT EXISTS name                      ON world_faction TYPE string;
+    DEFINE FIELD IF NOT EXISTS faction_type              ON world_faction TYPE string DEFAULT "agency";
+    DEFINE FIELD IF NOT EXISTS status                    ON world_faction TYPE string DEFAULT "active";
+
+    -- Membership
+    DEFINE FIELD IF NOT EXISTS leadership_ids            ON world_faction TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS member_ids                ON world_faction TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS territory_ids             ON world_faction TYPE array<string> DEFAULT [];
+
+    -- SAINT Framework: Narrative Gravity
+    DEFINE FIELD IF NOT EXISTS narrative_weight          ON world_faction TYPE float  DEFAULT 0.5;
+    DEFINE FIELD IF NOT EXISTS gravitational_mass        ON world_faction TYPE object DEFAULT {
+      trauma: 0.0,
+      hope: 0.0,
+      mystery: 0.0
+    };
+    DEFINE FIELD IF NOT EXISTS emotional_charge          ON world_faction TYPE float  DEFAULT 0.5;
+
+    -- SAINT Framework: Ideological Core
+    DEFINE FIELD IF NOT EXISTS concept_affinity          ON world_faction TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS concept_orthodoxy         ON world_faction TYPE float  DEFAULT 0.5;
+    DEFINE FIELD IF NOT EXISTS concept_propagation_rate  ON world_faction TYPE float  DEFAULT 0.3;
+
+    -- SAINT Framework: Swarm Dynamics
+    DEFINE FIELD IF NOT EXISTS internal_coherence        ON world_faction TYPE float  DEFAULT 0.7;
+    DEFINE FIELD IF NOT EXISTS vector_doctrine           ON world_faction TYPE object DEFAULT {
+      moral: 0.0,
+      method: 0.0,
+      social: 0.0
+    };
+    DEFINE FIELD IF NOT EXISTS vector_enforcement        ON world_faction TYPE float  DEFAULT 0.5;
+
+    -- SAINT Framework: Inter-Faction Relations
+    DEFINE FIELD IF NOT EXISTS alliances                 ON world_faction TYPE array<object> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS hostilities               ON world_faction TYPE array<object> DEFAULT [];
+
+    -- SAINT Framework: Player Relationship
+    DEFINE FIELD IF NOT EXISTS player_standing           ON world_faction TYPE float  DEFAULT 0.0;
+    DEFINE FIELD IF NOT EXISTS player_known_to           ON world_faction TYPE bool   DEFAULT false;
+    DEFINE FIELD IF NOT EXISTS player_perceived_alignment ON world_faction TYPE float DEFAULT 0.0;
+
+    DEFINE FIELD IF NOT EXISTS state                     ON world_faction TYPE object DEFAULT {};
+    DEFINE FIELD IF NOT EXISTS updated_at                ON world_faction TYPE datetime DEFAULT time::now();
+    DEFINE INDEX IF NOT EXISTS world_faction_name        ON world_faction COLUMNS name;
+    DEFINE INDEX IF NOT EXISTS world_faction_type        ON world_faction COLUMNS faction_type;
   `);
 
   // ── ACE SYSTEM TABLES ─────────────────────────────────────────────────────
@@ -341,5 +394,47 @@ export async function applyEntityAssetSchema() {
     DEFINE FIELD IF NOT EXISTS updated_at    ON entity_asset TYPE datetime DEFAULT time::now();
     DEFINE INDEX IF NOT EXISTS asset_game    ON entity_asset COLUMNS game_id;
     DEFINE INDEX IF NOT EXISTS asset_node    ON entity_asset COLUMNS lore_node_id;
+  `);
+}
+
+// ── Player Character Schema ──────────────────────────────────────────────────────────────────
+
+export async function applyPlayerCharacterSchema() {
+  const db = await getDB();
+
+  await db.query(`
+    -- What the world-builder defined in ## Player Character
+    DEFINE TABLE IF NOT EXISTS player_character_template SCHEMAFULL;
+    DEFINE FIELD IF NOT EXISTS game_id          ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS base_name        ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS description      ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS fixed_traits     ON player_character_template TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS backstory_options ON player_character_template TYPE array<object> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS trait_options    ON player_character_template TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS item_options     ON player_character_template TYPE array<object> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS max_item_picks   ON player_character_template TYPE int DEFAULT 1;
+    DEFINE FIELD IF NOT EXISTS allow_custom_name ON player_character_template TYPE bool DEFAULT true;
+    DEFINE FIELD IF NOT EXISTS allow_portrait   ON player_character_template TYPE bool DEFAULT true;
+    DEFINE FIELD IF NOT EXISTS starting_location ON player_character_template TYPE string DEFAULT "";
+    DEFINE FIELD IF NOT EXISTS lore_node_id     ON player_character_template TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS raw_markdown     ON player_character_template TYPE string DEFAULT "";
+    DEFINE FIELD IF NOT EXISTS created_at       ON player_character_template TYPE datetime DEFAULT time::now();
+    DEFINE INDEX IF NOT EXISTS pct_game         ON player_character_template COLUMNS game_id UNIQUE;
+
+    -- What the player chose at character creation
+    DEFINE TABLE IF NOT EXISTS player_character SCHEMAFULL;
+    DEFINE FIELD IF NOT EXISTS game_id          ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS player_id        ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS session_id       ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS template_id      ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS display_name     ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS portrait_url     ON player_character TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS chosen_backstory ON player_character TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS chosen_traits    ON player_character TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS chosen_items     ON player_character TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS world_actor_id   ON player_character TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS created_at       ON player_character TYPE datetime DEFAULT time::now();
+    DEFINE INDEX IF NOT EXISTS pc_session       ON player_character COLUMNS session_id UNIQUE;
+    DEFINE INDEX IF NOT EXISTS pc_player_game   ON player_character COLUMNS player_id, game_id;
   `);
 }

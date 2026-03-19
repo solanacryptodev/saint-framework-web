@@ -21,48 +21,6 @@ import { getDB } from "./surreal";
 import { Table } from "surrealdb";
 import { PlayerCharacterTemplate, PlayerCharacter, BackstoryOption, StartingItemOption } from "./types";
 
-// ── Schema ──────────────────────────────────────────────────────────────────
-
-export async function applyPlayerCharacterSchema() {
-    const db = await getDB();
-
-    await db.query(`
-    -- What the world-builder defined in ## Player Character
-    DEFINE TABLE IF NOT EXISTS player_character_template SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS game_id          ON player_character_template TYPE string;
-    DEFINE FIELD IF NOT EXISTS base_name        ON player_character_template TYPE string;
-    DEFINE FIELD IF NOT EXISTS description      ON player_character_template TYPE string;
-    DEFINE FIELD IF NOT EXISTS fixed_traits     ON player_character_template TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS backstory_options ON player_character_template TYPE array<object> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS trait_options    ON player_character_template TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS item_options     ON player_character_template TYPE array<object> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS max_item_picks   ON player_character_template TYPE int DEFAULT 1;
-    DEFINE FIELD IF NOT EXISTS allow_custom_name ON player_character_template TYPE bool DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS allow_portrait   ON player_character_template TYPE bool DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS starting_location ON player_character_template TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS lore_node_id     ON player_character_template TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS raw_markdown     ON player_character_template TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS created_at       ON player_character_template TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS pct_game         ON player_character_template COLUMNS game_id UNIQUE;
-
-    -- What the player chose at character creation
-    DEFINE TABLE IF NOT EXISTS player_character SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS game_id          ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS player_id        ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS session_id       ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS template_id      ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS display_name     ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS portrait_url     ON player_character TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS chosen_backstory ON player_character TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS chosen_traits    ON player_character TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS chosen_items     ON player_character TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS world_actor_id   ON player_character TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS created_at       ON player_character TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS pc_session       ON player_character COLUMNS session_id UNIQUE;
-    DEFINE INDEX IF NOT EXISTS pc_player_game   ON player_character COLUMNS player_id, game_id;
-  `);
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 export async function upsertPlayerCharacterTemplate(
