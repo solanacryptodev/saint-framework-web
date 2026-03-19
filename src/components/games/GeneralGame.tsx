@@ -1,7 +1,9 @@
+import { createSignal } from 'solid-js';
 import GameLayout from './GameLayout';
 import AgentProfile, { type AgentProfileProps } from './AgentProfile';
 import MissionPanel, { type MissionPanelProps } from './MissionPanel';
 import SiteIntelligence, { type SiteIntelligenceProps } from './SiteIntelligence';
+import PlayerCreationModal from '../PlayerCreation/PlayerCreationModal';
 import './GeneralGame.css';
 
 export interface GeneralGameProps {
@@ -129,6 +131,8 @@ export default function GeneralGame(props: GeneralGameProps) {
     const missionData = props.missionData ?? defaultMissionData;
     const intelData = props.intelData ?? defaultIntelData;
 
+    const [showPlayerModal, setShowPlayerModal] = createSignal(false);
+
     return (
         <div class="general-game">
             {props.onBack && (
@@ -139,12 +143,20 @@ export default function GeneralGame(props: GeneralGameProps) {
                         </svg>
                         Back to Game Details
                     </button>
+                    <button class="create-operative-btn" onClick={() => setShowPlayerModal(true)}>
+                        <span class="operative-diamond">◆</span>
+                        Create Operative
+                    </button>
                 </div>
             )}
             <GameLayout
                 agentPanel={<AgentProfile {...agentData} />}
                 missionPanel={<MissionPanel {...missionData} />}
                 intelPanel={<SiteIntelligence {...intelData} />}
+            />
+            <PlayerCreationModal
+                isOpen={showPlayerModal()}
+                onClose={() => setShowPlayerModal(false)}
             />
         </div>
     );

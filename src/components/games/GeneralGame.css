@@ -12,7 +12,41 @@
     flex-shrink: 0;
     position: relative;
     z-index: 100;
-    background: linear-gradient(135deg, rgba(15, 12, 8, 1) 0%, rgba(20, 16, 10, 1) 50%, rgba(15, 12, 8, 1) 100%);
+    background: linear-gradient(135deg, #050404 0%, #080605 50%, #050404 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Create Operative CTA */
+.create-operative-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(218, 165, 32, 0.12);
+    border: 1px solid rgba(218, 165, 32, 0.3);
+    color: rgba(218, 165, 32, 0.9);
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.create-operative-btn:hover {
+    background: rgba(218, 165, 32, 0.22);
+    border-color: rgba(218, 165, 32, 0.5);
+    box-shadow: 0 0 20px rgba(218, 165, 32, 0.15);
+    color: #f4e4c1;
+}
+
+.create-operative-btn .operative-diamond {
+    font-size: 0.7rem;
+    color: rgba(218, 165, 32, 0.8);
 }
 
 /* Back button styling */

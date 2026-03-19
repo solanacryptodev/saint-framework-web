@@ -1,0 +1,471 @@
+/* =============================================
+   PlayerCreationModal — Operative Initialization
+   ============================================= */
+
+/* Two-column layout inside the modal body */
+.pcm-layout {
+    display: flex;
+    min-height: 420px;
+}
+
+/* ── Left Sidebar ── */
+.pcm-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(218, 165, 32, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 0;
+    background: rgba(8, 6, 4, 0.4);
+}
+
+.pcm-sidebar-section {
+    padding: 0 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.pcm-sidebar-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: rgba(255, 200, 60, 0.55);
+    text-shadow: 0 0 6px rgba(255, 190, 40, 0.25);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+}
+
+.pcm-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: #fff;
+    font-weight: 500;
+}
+
+.pcm-sidebar-item:hover {
+    background: rgba(218, 165, 32, 0.08);
+    color: #fff;
+}
+
+.pcm-sidebar-item.active {
+    background: rgba(218, 165, 32, 0.12);
+    border-left: 3px solid rgba(218, 165, 32, 0.8);
+    color: rgba(255, 200, 60, 0.98);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.45);
+    font-weight: 600;
+    padding-left: calc(0.875rem - 3px);
+}
+
+.pcm-sidebar-item .item-icon {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    width: 18px;
+    text-align: center;
+}
+
+.pcm-sidebar-item.active .item-icon {
+    color: rgba(255, 200, 60, 0.95);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.4);
+    opacity: 1;
+}
+
+/* ── Right Content Panel ── */
+.pcm-content {
+    flex: 1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+/* Section titles */
+.pcm-section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: rgba(255, 200, 60, 0.5);
+    text-shadow: 0 0 6px rgba(255, 190, 40, 0.2);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+/* ── Asset Definition (top row) ── */
+.pcm-asset-definition {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.pcm-avatar {
+    width: 100px;
+    height: 120px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(218, 165, 32, 0.2);
+    background: linear-gradient(160deg,
+            rgba(20, 18, 14, 0.9) 0%,
+            rgba(30, 25, 16, 0.6) 50%,
+            rgba(10, 8, 5, 0.95) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.pcm-avatar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at center bottom, rgba(218, 165, 32, 0.08) 0%, transparent 70%),
+        linear-gradient(180deg, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+    pointer-events: none;
+}
+
+.pcm-avatar svg {
+    color: rgba(218, 165, 32, 0.3);
+    z-index: 1;
+}
+
+.pcm-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pcm-asset-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.pcm-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.pcm-field-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    color: rgba(255, 200, 60, 0.5);
+    text-shadow: 0 0 6px rgba(255, 190, 40, 0.2);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.pcm-field-value {
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.85rem;
+    color: rgba(255, 200, 60, 0.95);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.45);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.pcm-field-row {
+    display: flex;
+    gap: 2rem;
+}
+
+/* ── Stats Columns (bottom area) ── */
+.pcm-stats-row {
+    display: flex;
+    gap: 2rem;
+}
+
+.pcm-stats-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Stat bars */
+.pcm-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.pcm-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pcm-stat-name {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: #fff;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.pcm-stat-value {
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.pcm-stat-track {
+    height: 5px;
+    background: rgba(218, 165, 32, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.pcm-stat-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+}
+
+.pcm-stat-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 100%;
+    border-radius: 3px;
+    filter: blur(3px);
+}
+
+/* Color variants */
+.pcm-stat-fill.trauma {
+    background: linear-gradient(90deg, rgba(200, 70, 90, 0.9), rgba(240, 100, 120, 0.7));
+}
+
+.pcm-stat-fill.trauma::after {
+    background: rgba(240, 100, 120, 0.6);
+}
+
+.pcm-stat-value.trauma {
+    color: rgba(255, 110, 130, 0.95);
+    text-shadow: 0 0 8px rgba(255, 110, 130, 0.4);
+}
+
+.pcm-stat-fill.resolve {
+    background: linear-gradient(90deg, rgba(60, 180, 110, 0.9), rgba(80, 220, 140, 0.7));
+}
+
+.pcm-stat-fill.resolve::after {
+    background: rgba(80, 220, 140, 0.6);
+}
+
+.pcm-stat-value.resolve {
+    color: rgba(100, 240, 160, 0.95);
+    text-shadow: 0 0 8px rgba(100, 240, 160, 0.4);
+}
+
+.pcm-stat-fill.curiosity {
+    background: linear-gradient(90deg, rgba(80, 140, 220, 0.9), rgba(110, 170, 255, 0.7));
+}
+
+.pcm-stat-fill.curiosity::after {
+    background: rgba(110, 170, 255, 0.6);
+}
+
+.pcm-stat-value.curiosity {
+    color: rgba(130, 190, 255, 0.95);
+    text-shadow: 0 0 8px rgba(130, 190, 255, 0.4);
+}
+
+.pcm-stat-fill.narrative {
+    background: linear-gradient(90deg, rgba(218, 165, 32, 0.9), rgba(255, 200, 50, 0.7));
+}
+
+.pcm-stat-fill.narrative::after {
+    background: rgba(255, 200, 50, 0.6);
+}
+
+.pcm-stat-value.narrative {
+    color: rgba(255, 210, 60, 0.98);
+    text-shadow: 0 0 8px rgba(255, 200, 50, 0.45);
+}
+
+/* ── Alignment items ── */
+.pcm-alignment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0;
+}
+
+.pcm-alignment-indicator {
+    font-size: 0.7rem;
+    font-weight: 700;
+    width: 14px;
+    text-align: center;
+}
+
+.pcm-alignment-indicator.positive {
+    color: rgba(255, 200, 60, 0.92);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.4);
+}
+
+.pcm-alignment-indicator.negative {
+    color: rgba(255, 100, 100, 0.92);
+    text-shadow: 0 0 8px rgba(255, 100, 100, 0.4);
+}
+
+.pcm-alignment-indicator.neutral {
+    color: rgba(190, 190, 190, 0.72);
+    text-shadow: 0 0 6px rgba(190, 190, 190, 0.3);
+}
+
+.pcm-alignment-name {
+    flex: 1;
+    font-size: 0.65rem;
+    color: #fff;
+    letter-spacing: 0.05em;
+}
+
+.pcm-alignment-value {
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.pcm-alignment-value.negative {
+    color: rgba(255, 100, 100, 0.9);
+    text-shadow: 0 0 8px rgba(255, 100, 100, 0.35);
+}
+
+/* ── Operational Capacity ── */
+.pcm-capacity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.pcm-capacity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pcm-capacity-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: rgba(255, 200, 60, 0.82);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.35);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.pcm-capacity-value {
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.85rem;
+    color: #fff;
+    font-weight: 700;
+}
+
+.pcm-capacity-track {
+    height: 7px;
+    background: rgba(218, 165, 32, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.pcm-capacity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(218, 165, 32, 0.9) 0%, rgba(255, 200, 50, 0.7) 100%);
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 10px rgba(218, 165, 32, 0.35);
+}
+
+/* ── Footer Buttons ── */
+.pcm-btn-cancel {
+    background: transparent;
+    border: 1px solid rgba(200, 180, 140, 0.2);
+    color: #fff;
+    font-family: 'Tomorrow', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pcm-btn-cancel:hover {
+    border-color: rgba(220, 80, 80, 0.4);
+    color: rgba(255, 100, 100, 0.9);
+    text-shadow: 0 0 8px rgba(255, 100, 100, 0.35);
+    background: rgba(220, 80, 80, 0.06);
+}
+
+.pcm-btn-initialize {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.9), rgba(180, 130, 20, 0.9));
+    border: 1px solid rgba(255, 200, 50, 0.3);
+    color: #0a0804;
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.75rem 1.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 0 20px rgba(218, 165, 32, 0.15);
+}
+
+.pcm-btn-initialize:hover {
+    background: linear-gradient(135deg, rgba(255, 200, 50, 0.95), rgba(218, 165, 32, 0.95));
+    box-shadow: 0 0 30px rgba(218, 165, 32, 0.3);
+    transform: translateY(-1px);
+}
+
+.pcm-btn-initialize .btn-diamond {
+    font-size: 0.75rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .pcm-layout {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .pcm-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid rgba(218, 165, 32, 0.1);
+        padding: 1rem 0;
+    }
+
+    .pcm-asset-definition {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pcm-stats-row {
+        flex-direction: column;
+    }
+
+    .pcm-field-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}

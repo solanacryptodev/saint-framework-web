@@ -1,12 +1,18 @@
 .mission-panel {
-    background: linear-gradient(180deg, rgba(15, 12, 8, 0.98) 0%, rgba(10, 8, 5, 0.99) 100%);
-    border: 1px solid rgba(218, 165, 32, 0.25);
-    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(18, 16, 12, 0.75) 0%, rgba(12, 10, 7, 0.82) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(218, 165, 32, 0.18);
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
     font-family: 'Tomorrow', sans-serif;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(218, 165, 32, 0.05) inset,
+        0 1px 0 rgba(218, 165, 32, 0.08) inset;
 }
 
 /* Header */
@@ -26,14 +32,15 @@
 }
 
 .location-info svg {
-    color: rgba(218, 165, 32, 0.7);
+    color: rgba(255, 200, 60, 0.8);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.4);
 }
 
 .location-name {
     font-family: 'Goldman', sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #f4e4c1;
+    color: #fff;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
@@ -47,15 +54,18 @@
 }
 
 .phase {
-    color: rgba(218, 165, 32, 0.7);
+    color: rgba(255, 200, 60, 0.8);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.35);
 }
 
 .status-divider {
-    color: rgba(218, 165, 32, 0.3);
+    color: rgba(255, 200, 60, 0.4);
+    text-shadow: 0 0 6px rgba(255, 190, 40, 0.2);
 }
 
 .status {
-    color: rgba(100, 200, 130, 0.9);
+    color: rgba(120, 230, 150, 0.95);
+    text-shadow: 0 0 8px rgba(120, 230, 150, 0.4);
 }
 
 /* Narrative Content */
@@ -78,12 +88,13 @@
 .narrative-paragraph {
     font-size: 0.95rem;
     line-height: 1.7;
-    color: rgba(220, 200, 170, 0.85);
+    color: #fff;
     margin: 0;
 }
 
 .narrative-paragraph :global(.emphasis) {
-    color: rgba(220, 80, 80, 0.95);
+    color: rgba(255, 100, 100, 0.98);
+    text-shadow: 0 0 8px rgba(255, 100, 100, 0.4);
     font-weight: 500;
 }
 
@@ -91,9 +102,11 @@
 .active-threat {
     margin: 0 1.5rem;
     padding: 1rem;
-    background: rgba(220, 80, 80, 0.05);
-    border: 1px solid rgba(220, 80, 80, 0.2);
-    border-radius: 4px;
+    background: rgba(220, 80, 80, 0.06);
+    border: 1px solid rgba(220, 80, 80, 0.18);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .threat-header {
@@ -103,7 +116,8 @@
 .threat-label {
     font-size: 0.65rem;
     letter-spacing: 0.15em;
-    color: rgba(220, 80, 80, 0.7);
+    color: rgba(255, 100, 100, 0.8);
+    text-shadow: 0 0 8px rgba(255, 100, 100, 0.35);
     font-weight: 600;
 }
 
@@ -117,7 +131,7 @@
     font-family: 'Goldman', sans-serif;
     font-size: 1rem;
     font-weight: 600;
-    color: rgba(244, 228, 193, 0.95);
+    color: #fff;
     letter-spacing: 0.05em;
 }
 
@@ -137,14 +151,15 @@
 }
 
 .detail-label {
-    color: rgba(200, 180, 140, 0.6);
+    color: #fff;
     letter-spacing: 0.05em;
     min-width: 100px;
 }
 
 .detail-value {
     font-family: 'Goldman', sans-serif;
-    color: rgba(218, 165, 32, 0.9);
+    color: rgba(255, 200, 60, 0.95);
+    text-shadow: 0 0 8px rgba(255, 190, 40, 0.45);
     font-weight: 600;
 }
 
