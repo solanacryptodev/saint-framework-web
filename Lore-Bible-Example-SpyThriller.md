@@ -1,381 +1,441 @@
-# The Veil Directive
+# The Iron Veil Chronicles
 
 ## Game Info
 
-- **Description**: A disgraced intelligence analyst stumbles onto a conspiracy buried inside the Veil Directive's central archive — the last secure repository of pre-Purge intelligence. Trust no one. The Controller is watching.
-
+- **Description**: The Cold War never ended. It just went underground. You are a field operative working the shadows between East and West — where loyalty is currency, secrets are weapons, and everyone you trust is lying about something.
 - **Genre**: Spy Thriller
+- **Cost Tier**: paid
+- **Tags**: espionage, cold war, moral compromise, secrets, betrayal
 
-- **Cost Tier**: free
+---
 
-- **Price**: $0
+## Player Characters
 
-- **Tags**: espionage, conspiracy, investigation, single-player
+### Operative Ghost
+**Kind**: prebuilt
+**Status**: published
+**Description**: A ghost in the truest sense — no birth record, no family, no history the Agency can verify. What they do have is an uncanny ability to become whoever the mission requires. Three tours in denied areas. Fluent in four languages, functional in two more. The Agency trusts them because they have nothing to lose. That's also why no one sleeps easy around them.
+
+**Fixed Traits**:
+- Cover identity construction and maintenance
+- Surveillance detection and counter-surveillance
+- Fluency in Russian, German, French, and Arabic
+
+**Starting Items**: Forged diplomatic credentials (Swiss identity), compact signal jammer
+
+**Starting Location**: The Vienna Safe House
+
+**Allow Custom Name**: false
+**Allow Portrait**: false
+
+---
+
+### Agent Cipher
+**Kind**: prebuilt
+**Status**: published
+
+Former cryptanalysis officer turned field operative after an incident in Prague no one will put in writing. Cipher is brilliant and careful — two qualities that are supposed to work together and increasingly don't. They know things about the Agency's signals infrastructure that would be catastrophic in the wrong hands, which is precisely why the Agency keeps them close and the opposition keeps trying to turn them.
+
+**Fixed Traits**:
+- Signals intelligence and cipher analysis
+- Photographic memory for patterns and sequences
+- Institutional knowledge of Agency communication protocols
+
+**Starting Items**: Modified shortwave receiver, cipher key fragment (origin unknown)
+
+**Starting Location**: Marta's Office
+
+**Allow Custom Name**: false
+**Allow Portrait**: false
+
+---
+
+### Custom Operative
+**Kind**: template
+**Status**: published
+
+**Name**: The Operative
+**Description**: You came to this work through your own door. The Agency doesn't care how — only that you're useful. Define who you are before the mission defines you.
+
+**Fixed Traits**:
+- Field tradecraft fundamentals
+- The ability to compartmentalize
+
+**Backstory Options**:
+- **Defector**: You crossed from the other side with intelligence that bought your freedom. The Agency trusts your information. They do not trust you.
+- **Burned Asset**: You were someone else's operative first. That relationship ended badly. The details are classified — even from you.
+- **True Believer**: You joined because you believe in something. Three years in the field hasn't decided whether that was wisdom or naivety.
+- **Recruited Under Duress**: The Agency found something they could use. You made a calculation. You're still not sure if it was the right one.
+
+**Trait Options** (choose 2):
+- Weapons proficiency
+- Social engineering and manipulation
+- Technical surveillance and counter-surveillance
+- Document forgery
+- Psychological profiling
+- Emergency medicine
+- Safecracking and entry
+
+**Starting Items** (choose 1):
+- Service sidearm with suppressor
+- Diplomatic cover package
+- Technical kit (lock picks, signal detector, micro-camera)
+
+**Starting Location**: The Vienna Safe House
+
+**Allow Custom Name**: true
+**Allow Portrait**: true
+
+---
 
 ## Characters
 
-### Cassandra Vale
+### Director Harlan Voss
+Station Chief, Vienna. Sixty-one years old. The kind of man who looks like he was born in a grey suit and has never been comfortable since. Voss has been running assets across the Iron Curtain for thirty years. He is methodical, patient, and completely without sentiment. He knows the names of every operative he has lost and claims he doesn't think about them. No one believes him.
 
-- **Role**: Disgraced intelligence analyst, now freelance information hunter
+His current visible goal is the successful extraction of a Soviet defector code-named NIGHTINGALE. His hidden goal is ensuring that what NIGHTINGALE is carrying — a complete list of Agency assets behind the Iron Curtain — never reaches Director-level eyes in Langley.
 
-- **Faction**: None (formerly Veil Directive)
+**Location**: The Vienna Safe House
 
-- **Location**: The Veil Archive, Government District
+**Relationships**: Commands all Agency personnel in Vienna. Distrusts the new counter-intelligence liaison. Has a professional understanding with Marta Szabo that predates the current mission.
 
-- **Description**: Tall, sharp-featured, with a subtle tremor in her left hand from an interrogation that never made it into any file. She was expelled after copying classified mapping data of the Nexus.
+---
 
-- **Key Items**: Carries a Resonance Tracker that pings active Packages within half a mile. Wears a Silencer Ring that blocks low-level surveillance.
+### NIGHTINGALE
+Real name: Irina Vasiliev. Senior analyst, GRU signals directorate. Forty-four years old. She has been in contact with the Agency for six months through a dead drop chain and has never met any of her handlers face to face. She is offering everything — personnel files, operational methods, the complete asset list — in exchange for the extraction of her daughter, currently a student in Moscow.
 
-- **Relationships**: Owes a debt to Marco Stone. Was once mentored by Hunter Cross before his disappearance.
+Her visible goal is reaching the West alive. Her hidden goal is more complicated: NIGHTINGALE has already been identified by GRU counterintelligence. The contact chain she used has been compromised. She knows she is walking into a situation where she may be used as bait for something larger than her own extraction, and she has prepared accordingly.
 
-- **Secrets**: She is the biological daughter of the last Nexus Warden, a fact buried in a sealed file.
+**Location**: The Soviet Cultural Center
 
-### Marco Stone
+**Relationships**: Unknown to any Agency operative personally. Has a handler relationship with a Voss cutout. Her GRU superior, Colonel Demyanov, is aware of her contact with the West and has chosen not to arrest her yet.
 
-- **Role**: Black-market information broker, dead-drop coordinator
+---
 
-- **Faction**: The Exchange (neutral brokers)
+### Marta Szabo
+Hungarian-born freelance intelligence broker. Operates out of Vienna's second district. She has sold information to the Agency, the Soviets, the British, and at least one private party whose affiliation remains unknown. She is not loyal to any flag. She is loyal to survival and to a very specific personal code that she has never explained to anyone.
 
-- **Location**: The Drowned Market, Riverside District
+Her visible goal is completing a current transaction for technical specifications she claims to have acquired from a GRU logistics officer. Her hidden goal is that she has been approached by a third party offering significantly more than the Agency for the same material — and she is deciding which offer to accept based on factors that have nothing to do with money.
 
-- **Description**: Short, broad-shouldered, always eating. Runs a front as an antique dealer. His memory is eidetic — he forgets nothing and sells what he knows.
+**Relationships**: Professional relationship with Voss that goes back a decade. Aware of Cipher's reputation. Has never dealt with Ghost directly but has heard accurate things about them.
 
-- **Key Items**: Owns a Void Ledger — a tamper-proof record of every transaction he has ever brokered, stored in a Faraday-caged safe.
+**Location**: Marta's Office
 
-- **Relationships**: Cassandra Vale owes him a significant debt. Knows the real identity of the Controller (but won't say). Distrusts the Purists.
+---
 
-- **Secrets**: The Exchange was founded by a deep-cover asset from before the Purge. Marco is the fifth keeper of that secret.
+### Colonel Demyanov
+GRU counterintelligence. In Vienna under diplomatic cover as a cultural attaché. Fifty-seven years old, patient, and extremely good at his work. Demyanov is not a villain in his own understanding of events — he is a professional doing a job he believes in, with methods he has made a kind of peace with.
 
-### Hunter Cross
+He knows about NIGHTINGALE's contact with the Agency. He has allowed it to continue for six months because he is using her as a lead into the Agency's asset network in Eastern Europe. The extraction attempt will be the moment he closes the trap — unless something changes his calculation.
 
-- **Role**: Missing. Former Deputy Director of Analysis, Veil Directive
+His hidden leverage: he has a daughter studying in West Berlin. No one on either side knows. He has protected this fact for four years.
 
-- **Faction**: Veil Directive (status: unknown)
+**Location**: The Soviet Cultural Center
 
-- **Location**: Unknown — last seen near Nexus Access Point 7-Alpha
+**Relationships**: Professional adversary to Voss, though they have never met in person. Has an asset inside the Agency's Vienna station — identity unknown to the player at game start.
 
-- **Description**: Elderly, meticulous, with a reputation for running the most successful mole-hunt in agency history. Vanished six months ago with three encrypted drives of "Eyes Only" material. His personal assistant was found dead in a dead-drop location.
+---
 
-- **Key Items**: Took the Atlas of Sealed Vaults — a set of physical maps and access codes for every Nexus chamber.
+### Felix Adler
+Agency counter-intelligence liaison, newly assigned to Vienna. Thirty-eight years old. Ambitious in the way that makes experienced officers nervous. He has been asking questions about the Vienna station's operational history that he has no need-to-know for. He has also been asking questions about Voss specifically.
 
-- **Relationships**: Mentored Cassandra. Known to the Controller.
+His visible goal is integrating with the station and demonstrating his value. His hidden goal is that Adler was sent to Vienna by a faction within the Agency that believes Voss has been compromised. He is here to watch, document, and eventually report. What he does not know is that his own communications have been flagged by a third party.
 
-- **Secrets**: He descended into the Nexus voluntarily. He is alive and has found something that changed his allegiance.
+**Location**: The American Bar
 
-### The Controller
+**Relationships**: Formal subordination to Voss. Watching Cipher with professional interest. Has made no contact with Ghost and visibly avoids opportunities to do so.
 
-- **Role**: Anonymous power broker, puppet master
+---
 
-- **Faction**: Suspected: The Revelation (fourth faction)
+### The Cobra
+Real name: Daniel "Danny" Cole. A former intelligence officer who works on the inside of the Agency. He is a master of disguise and impersonation, and is known for his ability to get into places he shouldn't be. He is also a master of manipulation, and is known for his ability to get people to do what he wants them to do.
 
-- **Location**: Unknown — communicates via Ghost Drones
-
-- **Description**: No verified sighting. Known only through cut-outs. Buys Packages at above-market prices and removes them from circulation.
-
-- **Key Items**: Allegedly possesses a Cognition Chip — a prototype neural interface that can read surface thoughts.
-
-- **Relationships**: Known to Marco Stone. Employs former Purist operatives.
-
-- **Secrets**: Is orchestrating the full exposure of every secret the Veil Directive ever buried. Has a deadline.
+**Relationships**: Has a cordial relationship with Marta Szabo, but communication is entirely digital. They've never met in person.
 
 ---
 
 ## Factions
 
-### The Veil Directive
+### The Agency
+The Central Intelligence Agency's Vienna station. Nominally unified, operationally fractured. There is a faction that believes the NIGHTINGALE extraction must succeed at any cost. There is a faction that believes NIGHTINGALE is a provocation and the operation should be burned. And there is a very small faction, possibly just one man, that knows exactly what is on the asset list NIGHTINGALE is carrying and cannot allow it to reach Washington.
 
-- **Type**: Government intelligence agency
+**Base**: The Vienna Station (diplomatic cover as commercial attaché offices)
+**Known to Player**: Yes
+**Concepts Championed**: operational security, plausible deniability, institutional loyalty
+**Status**: Active
 
-- **Goal**: Maintain control of all classified Packages and Nexus access
+---
 
-- **Base**: The Veil Archive, Government District
+### GRU Counterintelligence
+Soviet military intelligence counterintelligence division, Vienna operation. Disciplined, patient, and currently holding a very strong hand. They have known about NIGHTINGALE for six months. They have let it run. The extraction attempt is the moment they have been waiting for.
 
-- **Traits**: Bureaucratic, paranoid, internally fractured. Three deputy directors compete for succession.
+**Base**: Soviet Embassy, third floor
+**Known to Player**: Yes
+**Concepts Championed**: patience, information control, the long game
 
-- **Resources**: Largest intelligence archive in the country. Controls all official surveillance grids.
+---
 
-- **Weakness**: Corruption. Multiple senior officers are on the Controller's payroll.
+### The Brokers
+No formal name. A loose network of freelance intelligence traders, document forgers, and information merchants operating in Vienna's gray zone. Marta Szabo is the most prominent. They serve whoever pays. Their only collective interest is the continued existence of the conditions — ambiguity, competing powers, secrets — that make their work possible.
 
-### The Exchange
+**Base**: No fixed base. The second district cafés and the city's private auction houses.
+**Known to Player**: Partially — the player knows freelance brokers exist, not their network depth
+**Concepts Championed**: transactional loyalty, self-preservation, information as commodity
 
-- **Type**: Neutral information brokerage
+---
 
-- **Goal**: Profit. Survival. Institutional continuity.
+### The Serpents
+A hacktivist group that operates under total anonymity. They are known for their ability to infiltrate secure systems and leak sensitive information to the public. They are not affiliated with any government or organization, and their motives are unclear. 
 
-- **Base**: The Drowned Market, Riverside District
+**Leader**: The Cobra
+**Base**: Unknown, but it is believed they are decentralized and operating globally.
+**Known to Player**: Partially — the player has had runins with them in the past, but does not know their true nature.
+**Concepts Championed**: freedom, truth, authoritarian governments must fall, capitalism must fall
+**Status**: Active
 
-- **Traits**: Strictly neutral, deeply paranoid about being weaponised by any faction.
+---
 
-- **Resources**: Perfect information on Package movements. A network of dead-drop locations throughout the city.
+### The Third Party
+Unknown. Someone has been acquiring intelligence in Vienna that neither the Agency nor GRU has attributed. The purchases are targeted: signals infrastructure, asset cover identities, defection protocols. Someone is building a picture of exactly how both sides move people and information. Who they are and what they intend to do with this picture is the deep mystery of the Chronicles.
 
-- **Weakness**: Their neutrality becomes a liability when forced to choose sides.
-
-### The Purists
-
-- **Type**: Militant anti-intelligence cult
-
-- **Goal**: Destroy all Packages and data before the Revelation can expose them
-
-- **Base**: The Iron Foundry, Industrial Zone ruins
-
-- **Traits**: Fanatical, disciplined, willing to sacrifice civilians to prevent exposure.
-
-- **Resources**: Superior combat training. A small number of Null Emitters — devices that can scramble active surveillance and jam neural chips.
-
-- **Weakness**: Their extremism drives potential allies away. Leadership is compromised (Controller infiltration).
-
-### The Revelation
-
-- **Type**: Secret conspiracy / whistleblower network
-
-- **Goal**: Declassify every secret the Veil Directive ever buried
-
-- **Base**: Unknown — believed to operate from inside the Nexus
-
-- **Traits**: Patient, methodical, embedded in all other factions.
-
-- **Resources**: Unknown number of Packages. The Controller's resources. Time.
-
-- **Weakness**: Unknown to others — therefore no active resistance.
+**Base**: Unknown
+**Known to Player**: No — their existence is discoverable through play
+**Concepts Championed**: unknown
+**Status**: Unknown
 
 ---
 
 ## Locations
 
-### The Veil Archive
+### The Vienna Safe House
+A furnished apartment on the fourth floor of a building in the first district, registered to a Swiss import company that does not exist. Professionally maintained, regularly swept for signals, and deeply unremarkable from the outside. Three exits. The kitchen window faces a courtyard with a reliable escape route. The player begins here.
 
-- **Kind**: Location (facility)
+**Region**: First District, Vienna
+**Accessible**: Yes
+**Traversal Risk**: 0.1
+**Atmosphere**: Clean. Careful. The kind of quiet that means someone has worked very hard to make it quiet.
+**Secrets**: The previous occupant left something behind a loose tile in the bathroom. It has been here for eleven months and whoever left it has not returned.
 
-- **District**: Government District
+---
 
-- **Description**: A brutalist concrete building ten stories tall, filled with classified files, server farms, and interrogation rooms. The top floor is accessible only to the Director. The basement connects, via a blast door, to the Nexus.
+### The American Bar
+A small bar in the first district, open since 1908, frequented by journalists, minor diplomats, and people who want to be seen in neutral company. The Agency uses it for brush passes and low-risk contacts. So does GRU, though neither side acknowledges this about the other.
 
-- **Controlled by**: The Veil Directive
+**Region**: First District, Vienna
+**Accessible**: Yes
+**Traversal Risk**: 0.15
+**Atmosphere**: Warm wood, quiet conversation, the particular comfort of a place that has survived everything.
+**Concept Imprint**: transactional loyalty 0.6, observation 0.7
+**Secrets**: The bartender has worked here for twenty-two years and has heard things from both sides of the Iron Curtain. He does not sell information. He is, however, very good at remembering faces and connecting them to other faces he has seen.
 
-- **Notable**: The blast-door logs show it was opened from the inside three weeks ago. No one has reported it.
+---
 
-- **Connected to**: Nexus Access Point 7-Alpha, The Controller's network
+### The Soviet Cultural Center
+Diplomatic premises. Officially a library and cultural exchange facility. Actually the administrative cover for a significant portion of GRU Vienna's operational activities. The third floor is inaccessible to non-Soviet nationals. The basement has no official function.
 
-### The Drowned Market
+**Region**: Third District, Vienna
+**Accessible**: Partially — public areas only without cover
+**Traversal Risk**: 0.7
+**Atmosphere**: Formally pleasant. The books are real. The warmth is not.
+**Controlled By**: GRU Counterintelligence
+**Secrets**: The basement contains a communications room that has been active for six months longer than the current Vienna residency has been in place. Someone was operating here before Demyanov arrived.
 
-- **Kind**: Location (district)
+---
 
-- **District**: Riverside District
+### The Prater
+Vienna's historic park. Large enough to lose a surveillance team in. Used by both sides for dead drops and meetings that need open-air cover. The old amusement park section is closed for the season, which makes it reliable for conversations that need privacy.
 
-- **Description**: A labyrinthine market district along the river, where the streets flood at high tide and shift layout weekly. Black-market goods move freely. The Exchange operates three storefronts here.
+**Region**: Second District, Vienna
+**Accessible**: Yes
+**Traversal Risk**: 0.2
+**Atmosphere**: Autumn. Empty. The Ferris wheel is visible from almost anywhere in the park.
+**Secrets**: There is an active dead drop in the park that neither the Agency nor GRU has attributed. Someone is using it regularly. The material left and collected is consistent with signals intelligence.
 
-- **Controlled by**: No one officially. The Exchange has de facto authority.
+---
 
-- **Notable**: A flood three weeks ago exposed a new entrance to the Nexus — a tunnel behind a collapsed warehouse wall.
+### The Border Crossing — Checkpoint Bravo
+The primary land crossing between Austria and Hungary. Heavily monitored by both sides. The Agency uses it for extractions under cover of diplomatic pouches and commercial vehicle manifests. GRU has an asset among the Austrian border guards — the identity of that asset is in NIGHTINGALE's files.
 
-- **Connected to**: The Exchange network, Nexus access point (unmapped)
+**Region**: Eastern Austria, Vienna outskirts
+**Accessible**: Yes (with appropriate cover)
+**Traversal Risk**: 0.85
+**Atmosphere**: Fluorescent light. Bureaucratic patience. The feeling of being very carefully looked at.
+**Secrets**: The crossing schedule has a forty-minute window each night where the GRU surveillance rotation produces a gap. NIGHTINGALE knows about this window. She has not told the Agency.
 
-### The Nexus
+---
 
-- **Kind**: Location (underground network)
+### Marta's Office
+A private room above a watchmaker's shop in the second district. Not advertised. Access by introduction only. Marta conducts all her transactions here. The room is clean of signals equipment because she sweeps it herself every morning. The walls are covered in maps that are entirely decorative.
 
-- **District**: Beneath all districts
-
-- **Description**: A vast network of hardened vaults, server rooms, and black-site cells built during the Cold War. Contains most of the remaining unregistered Packages. The deeper you go, the more surveillance becomes unreliable — cameras glitch, audio loops, and the hum of old servers sounds like whispers.
-
-- **Controlled by**: No one. Contested.
-
-- **Notable**: Hunter Cross is somewhere inside. Access Point 7-Alpha is where the Revelation has established a foothold.
-
-- **Connected to**: The Veil Archive (basement), The Drowned Market (new tunnel), Nexus Access Point 7-Alpha
-
-### The Iron Foundry
-
-- **Kind**: Location (fortress, ruins)
-
-- **District**: Industrial Zone
-
-- **Description**: A crumbling factory that the Purists have fortified with salvaged materials and Null Emitter barriers. The interior smells of burnt electronics. Null fields make any electronic device unreliable within 50 meters.
-
-- **Controlled by**: The Purists
-
-- **Notable**: Two Purist cell leaders have gone missing in the last month. The Controller is suspected.
-
-- **Connected to**: Industrial Zone ruins, Purist patrol routes
+**Region**: Second District, Vienna
+**Accessible**: By introduction only
+**Traversal Risk**: 0.1
+**Atmosphere**: Professional neutrality. The maps are Austro-Hungarian Empire era. She has never explained why.
+**Secrets**: There is a second exit through the watchmaker's storage room that emerges on a different street. Marta has used it twice in the past year. Both times involved the same person following her.
 
 ---
 
 ## Items
 
-### Resonance Tracker
+### The Asset List
+A microfilm containing the complete list of Agency human intelligence assets operating behind the Iron Curtain. 47 names. Cover identities. Contact protocols. Emergency extraction routes. This is what NIGHTINGALE is carrying. This is what everyone wants and everyone fears.
 
-- **Kind**: Item (surveillance tool)
-
-- **Owner**: Cassandra Vale
-
-- **Location**: The Veil Archive, Government District
-
-- **Description**: A modified smartphone with a custom antenna. Pings toward the nearest active Package within half a mile. The screen flickers and displays static when a Cognition Chip is nearby.
-
-- **Special**: When within range of the Nexus, it begins pointing downward — and occasionally shows directions that don't correspond to any known Package.
-
-### Void Ledger
-
-- **Kind**: Item (artifact, record)
-
-- **Owner**: Marco Stone
-
-- **Location**: The Drowned Market, Riverside District
-
-- **Description**: A thick, waterproof notebook bound in oilcloth. Entries appear automatically when Marco witnesses or brokers a significant transaction. He cannot write in it voluntarily — the entries write themselves in disappearing ink that only he can read under UV light.
-
-- **Special**: The oldest entries, near the back, are in a code that predates the agency. They appear to describe transactions made by a long-dead asset before the Purge.
-
-### Atlas of Sealed Vaults
-
-- **Kind**: Item (map, encrypted data)
-
-- **Owner**: Hunter Cross (missing)
-
-- **Location**: Unknown — last known location near Nexus Access Point 7-Alpha
-
-- **Description**: Three encrypted USB drives, each containing hand-annotated maps covering every known and suspected Nexus vault. Taken from restricted Archive storage. The annotations in Hunter's handwriting grow increasingly erratic toward the end.
-
-- **Special**: The final files on Volume 3 were created after Hunter entered the Nexus — the timestamps are corrupted, and some sectors appear to have been written simultaneously from two different devices.
-
-### Null Emitter
-
-- **Kind**: Item (counter-surveillance device)
-
-- **Owner**: The Purists (multiple)
-
-- **Location**: The Iron Foundry, Industrial Zone
-
-- **Description**: A portable jammer that emits a field cancelling active surveillance and neural-chip functions within proximity. Powered by a custom battery that lasts six hours.
-
-- **Special**: Exposure to Null Emitters for extended periods causes disorientation and short-term memory loss. The Purists accept this as necessary.
-
-### Cognition Chip
-
-- **Kind**: Item (prototype, neural interface)
-
-- **Owner**: The Controller (alleged)
-
-- **Location**: Unknown — believed to be inside the Nexus
-
-- **Description**: One of three known prototypes that interface directly with neural activity. Allows the holder to read surface thoughts, plant suggestions, and — at full power — rewrite recent memories.
-
-- **Special**: One of the three pieces needed to assemble the full picture the Revelation seeks. The Controller has had it for two years.
-
-### Ghost Drones
-
-- **Kind**: Item (communication device)
-
-- **Owner**: The Controller
-
-- **Location**: Unknown — believed to be inside the Nexus
-
-- **Description**: Palm-sized quadcopters, nearly silent, that deliver encrypted messages and self-destruct upon delivery. They leave no trace except a faint smell of ozone.
-
-- **Special**: Can fly through open windows and air ducts. Cannot enter areas protected by Null Emitters.
-
-### Dead Drop Radio
-
-- **Kind**: Item (communication device)
-
-- **Owner**: Unknown
-
-- **Location**: The Drowned Market, Riverside District (hidden in a maintenance closet)
-
-- **Description**: A short-range encrypted radio that occasionally receives coded transmissions. No one knows who placed it or who is sending the messages.
-
-- **Special**: The transmissions reference something called "Operation Nightfall" — a name that doesn't appear in any Archive records.
-
-### Burned Intel Fragment
-
-- **Kind**: Item (document, evidence)
-
-- **Owner**: Unknown
-
-- **Location**: The Veil Archive, Government District (found in the basement incinerator)
-
-- **Description**: A partially destroyed document recovered from the Archive's incinerator. The surviving text references a high-ranking mole and a deadline tied to the Purge anniversary.
-
-- **Special**: The handwriting analysis was inconclusive — it matches no one currently on staff.
-
-### The Black Ledger
-
-- **Kind**: Item (rumored artifact, database)
-
-- **Owner**: Unknown
-
-- **Location**: Unknown
-
-- **Description**: A rumored encrypted database said to contain the true identities of every double agent who ever operated within the Veil Directive. Its existence is unconfirmed, but multiple factions are searching for it.
-
-- **Special**: If it exists, it could expose moles in every faction simultaneously — making it the most dangerous piece of intelligence in play.
+**Kind**: document
+**Narrative Weight**: 1.0
+**Gravitational Mass**: [0.9, 0.1, 0.6] — high wound mass (catastrophic if exposed), low hope, significant mystery
+**Concept Affinity**: power 0.9, secrecy 1.0, exposure 0.8
+**Concept Transfer**: 0.7 — those who hold it become consumed by what it represents
+**Known to Player**: No — its existence is known, its location is not
+**Plausibility Anchor**: 1.0 — this item defines what the mission is
 
 ---
 
-## History & Secrets
+### The Cipher Fragment
+A twelve-character sequence on a card in Cipher's possession. It matches no known Agency cipher scheme. Where it came from is not in any file Cipher has been able to access. It is, however, recognizable as the first segment of a GRU emergency authentication code — which should be impossible for an Agency operative to possess.
 
-- The Purge that gutted the Veil Directive was not caused by a foreign power — the agency's own director orchestrated it to cover the existence of a deep-cover asset who had learned the truth about the Nexus. The Revelation doesn't know this. If they succeed, they will expose the director's crime — and the asset's secret.
-
-- Cassandra's Resonance Tracker has been pointing at a location inside the Archive basement for three days. She hasn't noticed yet.
-
-- The new tunnel in the Drowned Market opens directly into the chamber where Hunter Cross has been living for six months. He knows about the tunnel. He has chosen not to emerge.
-
-- The Void Ledger's oldest entries are a contract. The long-dead asset sold something to an unnamed buyer. The price was the asset's own life.
-
----
-
-## Concepts & Events
-
-### Concepts
-
-- **The Fallen Asset**: A former intelligence officer who went deep undercover and never returned — now believed to be the linchpin of the Revelation's plan. Anyone who learns too much about this concept becomes a target.
-
-- **The Leak**: An ongoing, undetected bleed of classified information from the Archive. The source is unknown, but the information always ends up with the Exchange.
-
-- **The Sleeper**: An agent placed so deep they don't even know they are an agent until activated. Rumour says one is embedded in every major faction, awaiting the Controller's signal.
-
-- **The Deadline**: The Revelation is working toward a specific date — the anniversary of the Purge — when they intend to release everything simultaneously. Time is running out.
-
-### Events
-
-- **The Breach at Sector 7**: Six months ago, someone bypassed every security layer at Nexus Access Point 7-Alpha. Hunter Cross was the only person with that level of clearance. The breach was never reported.
-
-- **The Death of the Handler**: Two years ago, the Exchange's top liaison was found dead in a dead-drop location, a Cognition Chip nearby. The chip disappeared from evidence the next day.
-
-- **The Revelation**: The as-yet-unrealised event when all secrets are exposed. The Controller has scheduled it for the Purge anniversary. If it happens, every character's life will be upended.
+**Kind**: artifact
+**Narrative Weight**: 0.8
+**Gravitational Mass**: [0.2, 0.1, 0.9] — low wound mass, very low hope, extremely high mystery
+**Concept Affinity**: secrecy 0.9, identity 0.7, doubt 0.6
+**Concept Transfer**: 0.5 — extended contact produces increasing unease about institutional loyalty
+**Known to Player**: Yes (if playing Cipher) / No (other characters)
+**Plausibility Anchor**: 0.6
 
 ---
 
-## Player Character
+### The Diplomatic Pouch — Transit 7
+A sealed diplomatic pouch currently sitting in a locked room at the Austrian Foreign Ministry, scheduled for transfer to Budapest in 72 hours. It was placed there by a courier the Agency has no record of. What it contains is unknown. That it exists at all is something only three people know — and the player is not yet one of them.
 
-You are an outsider drawn into the orbit of the Veil Archive — skilled enough to survive, connected enough to be dangerous, and carrying a secret that hasn't fully revealed itself yet.
+**Kind**: document
+**Narrative Weight**: 0.7
+**Gravitational Mass**: [0.3, 0.2, 0.8]
+**Concept Affinity**: secrecy 0.8, third_party 0.7
+**Known to Player**: No
+**Plausibility Anchor**: 0.5
 
-- **Name**: Kael Cross
+---
 
-- **Description**: A freelance information hunter who trades in secrets the Veil Directive would rather keep buried. Known to Marco Stone, unknown to everyone else.
+### Demyanov's Personal Letters
+A bundle of correspondence between Demyanov and his daughter in West Berlin. Written in a personal cipher the GRU does not know he uses. They represent leverage of extraordinary potency — proof that a senior GRU officer has maintained unauthorized personal contact across the Iron Curtain for four years.
 
-- **Starting Location**: The Veil Archive, Public Reading Room (a cover for low-level researchers)
+**Kind**: document
+**Narrative Weight**: 0.6
+**Gravitational Mass**: [0.5, 0.3, 0.4]
+**Concept Affinity**: family 0.9, vulnerability 0.8, leverage 0.9
+**Concept Transfer**: 0.4 — those who read them feel the weight of what they're holding
+**Known to Player**: No — discoverable through investigation
+**Plausibility Anchor**: 0.7
 
-- **Backstory Options**:
+---
 
-- **The Exile**: You were expelled from the Veil Directive three years ago for copying classified mapping data. You know the Archive's layout better than anyone who still works there. The security chief has orders to turn you away — but the basement door was left unlocked.
+## Concepts
 
-- **The Debtor**: Marco Stone pulled you out of a bad situation six months ago. You owe him something significant, and he's finally calling it in. He wants you inside the Archive. He hasn't told you why.
+### The Long Game
+The operational philosophy that patient observation produces better intelligence than active intervention. Both the Agency and GRU subscribe to it officially. In practice, both sides break with it the moment they feel they're losing. Currently contested in Vienna as the extraction timeline compresses.
 
-- **The Inheritor**: You recently discovered that your late parent was the last Nexus Warden. You don't know what that means yet. But someone left a Resonance Tracker on your doorstep, and it's been pointing at the Archive basement for three days.
+**Feeling**: Neutral — neither dark nor hopeful, simply cold
+**Story Fuel**: High — every choice the player makes will be evaluated against this concept
+**Known to Player at Start**: Yes
 
-- **Traits**: [Perceptive], [Cautious], [Marked by the Nexus]
+### Institutional Loyalty
+The belief that the organization is more important than any individual within it — including yourself. Dominant among Agency personnel. Being tested by the fractures within the Vienna station. At the moment, still above 0.6 adoption among most characters, but fragile.
 
-- **Fixed**: Knowledge of tradecraft basics, fluency in two dead languages used in old files
+**Feeling**: Slightly negative — functions as constraint more than inspiration
+**Story Fuel**: Very high
+**Known to Player at Start**: Yes
 
-- **Starting Items**: Choose 1:
+### The List Changes Everything
+The emerging belief, spreading among those who know about the asset list, that whoever controls it will hold decisive leverage over both sides — and that this leverage is worth doing things that can't be undone. Currently at 0.3 adoption. Rising.
 
-- **Resonance Tracker**: Points toward active Packages within half a mile. Currently pointing down.
+**Feeling**: Negative — carries the weight of catastrophic consequence
+**Story Fuel**: Very high
+**Known to Player at Start**: No — adoption visible only once the list becomes real to the player
 
-- **Null Emitter Fragment**: A damaged jammer. Cancels nearby surveillance within arm's reach. The Purists would pay well for it.
+### No One Is Clean
+The erosion of the belief that there is a morally correct side in this work. Starts low. Rises as the player makes choices. At high adoption it begins affecting NPC behavior — characters become more willing to cross lines they previously held.
 
-- **Void Ink Pen**: A pen whose ink is invisible except under UV. Whatever you write with it becomes permanent record — no one else can see it without the right light.
+**Feeling**: Deeply negative
+**Story Fuel**: High
+**Known to Player at Start**: Partial — present as an undercurrent from turn one
 
-- **Allow Custom Name**: true
+### The Third Party Is Real
+A concept that begins at zero and rises as evidence accumulates. While it remains below 0.4, characters dismiss the anomalies as coincidence. Above 0.6, the entire operational picture shifts. At 0.75, it becomes the dominant frame through which all characters interpret events.
 
-- **Allow Portrait**: true
+**Feeling**: Negative with a current of dread
+**Story Fuel**: Extremely high
+**Known to Player at Start**: No
+
+---
+
+### Capitalism Must Fall
+A belief that the only way to achieve true freedom is to overthrow the capitalist system. The Serpents are the primary proponents of this belief. While it remains at 0.2 adoption, it is a fringe belief. As it rises above 0.4, more characters will begin to question the status quo. As it rises above 0.6, characters will begin to act on this belief. At 0.75, it becomes the dominant frame through which all characters interpret events.
+
+**Feeling**: Revolutionary
+**Story Fuel**: Medium
+**Known to Player at Start**: No
+
+### Authoritarian Governments Must Fall
+A belief that the only way to achieve true freedom is to overthrow authoritarian governments. The Serpents are the primary proponents of this belief. While it remains at 0.2 adoption, it is a fringe belief. As it rises above 0.4, more characters will begin to question the status quo. As it rises above 0.6, characters will begin to act on this belief. At 0.75, it becomes the dominant frame through which all characters interpret events.
+
+**Feeling**: Revolutionary
+**Story Fuel**: Medium
+**Known to Player at Start**: No
+
+## Events
+
+### Operation NIGHTINGALE — Active Contact Window
+Six months ago NIGHTINGALE made her first contact with the Agency through a dead drop in Budapest. The contact chain has been active since. This event established the current operational tempo in Vienna and is the reason every major character is where they are right now. Its gravitational mass is high across all three axes — the wounds it could cause if it fails, the hope it represents for the assets whose names are on the list, and the mystery of whether NIGHTINGALE is who she says she is.
+**Significance**: 0.9
+**Long Shadow**: 10
+**Ideas Spawned**: asset_exposure 0.6, extraction_urgency 0.7, trust_uncertainty 0.5
+**Known to Player at Start**: Yes — as operational context, not full detail
+
+### The Prague Compromise
+Three years ago. Four assets dead. Eight years of signals infrastructure gone in seventy-two hours. The official finding was operational error. This event is the wound that hasn't closed — it is why Adler is in Vienna, why Cipher is watched, and why Voss's reputation is both his greatest asset and his greatest vulnerability. It has been generating tension in the background of every Agency operation since.
+**Significance**: 0.85
+**Long Shadow**: 9
+**Ideas Spawned**: institutional_distrust 0.7, someone_sold_us 0.4
+**Known to Player at Start**: Partially — the event is known, the cause is not
+
+### Marta's Undisclosed Transaction
+Four weeks ago Marta received an approach from an unknown party offering substantially more than her Agency retainer for the same technical specifications she is currently holding. She has not disclosed this to either side. She accepted the higher offer three days ago. The clock on that decision is now running. This is the live event with the highest immediate consequence — it will produce a betrayal, the only question is when and who is caught in it.
+**Significance**: 0.8
+**Long Shadow**: 7
+**Ideas Spawned**: third_party_active 0.5, broker_network_compromised 0.4
+**Known to Player at Start**: No
+
+### The Prater Drop — First Contact
+Four months ago. The first material appeared in the unattributed dead drop in the Prater. Neither side has claimed it and neither side has attributed it. This event is the earliest visible trace of the Third Party's operation in Vienna and the anchor point for the entire Third Party storyline. Its mystery mass is the highest of any event in the game.
+**Significance**: 0.7
+**Long Shadow**: 8
+**Ideas Spawned**: third_party_real 0.3, vienna_is_compromised 0.4
+**Known to Player at Start**: No — discoverable
+
+### Demyanov's Daughter Relocation Order
+Two weeks ago Moscow issued a routine administrative order moving Demyanov's daughter from her West Berlin university program back to a Moscow institute. It is framed as a routine transfer. Demyanov knows it is not. Someone in Moscow has discovered the connection or suspects it. His leverage window is now measured in days. This event is what makes Demyanov dangerous — a patient man who suddenly has a reason to stop being patient.
+**Significance**: 0.65
+**Long Shadow**: 6
+**Ideas Spawned**: demyanov_exposed 0.3, leverage_closing 0.6
+**Known to Player at Start**: No
+
+## History and Secrets
+
+### The Iron Veil Accord
+Twenty-two years ago, during a particularly dangerous moment of direct superpower tension, a group of senior intelligence officers on both sides negotiated an informal operational accord — a set of unwritten rules governing what each side could do in Vienna without triggering an escalation neither wanted. The Accord has never been written down. It is passed between senior officers verbally. Voss knows it. Demyanov knows it. The accord is currently being violated by at least one party, and possibly two.
+
+### The Prague Incident
+Three years ago, an Agency operation in Prague ended in the deaths of four assets and the compromise of a signals network that had taken eight years to build. The official finding was operational error. The unofficial finding, held by approximately six people, is that the network was sold. Cipher was the signals officer on that operation. Adler was the counter-intelligence analyst who wrote the official finding. They have not discussed this. They are both in Vienna.
+
+### What Voss Is Actually Protecting
+The asset list NIGHTINGALE is carrying contains a name that Voss put there himself. Not an asset. A fabrication — a ghost identity he created twelve years ago and has been maintaining as cover for a private financial arrangement that has nothing to do with intelligence work. If the list reaches Langley, that name will be audited. The audit will find nothing where there should be something. Voss has spent thirty years building a reputation for absolute integrity. He will not let that reputation die in an audit room.
+
+### The Dead Drop in the Prater
+The unattributed dead drop has been active for four months. The material passed through it is not the kind of thing either side trades — it is operational methodology, how agents are trained, how covers are built, how assets are handled. Someone is learning how the intelligence services work from the inside. The Third Party is assembling a capability, not just collecting information. What they intend to do with it is the question that, once asked, cannot be unasked.
+
+### Unresolved tensions for world threads
+
+1. NIGHTINGALE's extraction window is 72 hours — after that her GRU file will be formally opened and the diplomatic conditions for extraction collapse
+2. Adler is getting close to the Prague connection — if he finds it before the player does, he controls the narrative
+3. The Cipher Fragment came from somewhere; the longer it stays unexamined, the more dangerous the truth it's pointing toward becomes
+4. Demyanov's daughter is about to be moved from West Berlin back to Moscow — his leverage window is closing, which makes him more predictable and therefore more dangerous
+5. Marta has accepted the higher offer. She hasn't told anyone yet. The clock is running.

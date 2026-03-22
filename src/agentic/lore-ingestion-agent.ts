@@ -143,7 +143,9 @@ export function chunkLoreBible(markdown: string): IngestionChunk[] {
             currentLines = [];
         } else if (line.startsWith("### ")) {
             flushChunk();
-            // ### inherits the parent ## section type so entities are classified correctly
+            // ### sub-sections inherit the parent ## section type.
+            // When inside ## Player Characters, each ### becomes its own
+            // player_character chunk so pre-built characters are parsed individually.
             currentHeading = line.replace("### ", "").trim();
             currentSectionType = getSectionType(currentSection);
             currentLines = [];
@@ -212,6 +214,7 @@ const writeLoreNodeTool = createTool({
             kind,
             name,
             description,
+            canon: true,
             properties: {
                 ...properties,
                 aliases,
@@ -287,13 +290,20 @@ export function buildIngestionAgent(): Agent {
     return new Agent({
         id: "lore-ingestion-agent",
         name: "lore-ingestion-agent",
-        model: openrouter("minimax/minimax-m2.5"),
+        model: openrouter("minimax/minimax-m2.7", {
+            extraBody: {
+                temperature: 1,
+                reasoning: {
+                    enabled: true
+                }
+            }
+        }),
         instructions: `
 
 CRITICAL RULES — READ BEFORE WRITING ANYTHING:
 - Use the EXACT names from the lore bible. Do not paraphrase, rename, or combine entities.
 - Every named entity gets its own lore_node — characters, factions, locations, items, concepts, events.
-- Do not skip any named entity. Do not stop early. Write every single one.
+- Do not skip any named entity with a ### heading. Do not stop early. Write every single one.
 - Descriptions must be grounded in what the text says, not invented.
 
 You are the Lore Ingestion Agent for the ACE Narrative Engine.
@@ -302,7 +312,7 @@ Your job is to read structured markdown lore bibles and build a knowledge graph 
 After writing ALL nodes and relations, respond with a brief summary.
 
 You have three tools:
-1. write_lore_node — create a node for each entity (character, faction, location, item, concept)
+1. write_lore_node — create a node for each entity (character, faction, location, item, concept, event)
 2. write_lore_relation — create directed edges between nodes
 3. extract_lore_entities — inspect a chunk before writing
 
@@ -319,13 +329,16 @@ ENTITY KINDS:
 - faction: organizations, groups, cults, institutions  
 - location: places, districts, buildings, regions
 - item: objects, artifacts, relics, tools
-- concept: abstract things like "The Shards", "The Reassembly plan", "The Dead God's purpose"
+- concept: philosophical ideas and abstract things that beliefs are formed around in short, simple declarative statements like: 
+        - "Freedom is the absence of control."
+        - "Love is nothing without sacrifice."
+        - "War is necessary for progress."
 - event: named events, occurrences, incidents
 
 PROPERTIES TO EXTRACT per entity kind:
 - character: role, faction, secrets, status (alive/missing/unknown)
 - faction: goal, base_location, strength, weakness, infiltrated_by
-- location: district, controlled_by, connections, secrets
+- location: description, controlled_by, connections, secrets, accessible, region
 - item: owner, abilities, special_properties
 - concept: significance, who_knows_about_it
 - event: significance, who_knows_about_it
@@ -365,12 +378,13 @@ export async function ingestLoreBible(
         ? parseGameInfoSection(gameInfoChunk.content)
         : null;
 
-    // Detect ## Player Character section — parse immediately, no LLM needed
-    const playerCharChunk = chunks.find(c => c.sectionType === "player_character");
-    let playerCharacterTemplate: PlayerCharacterTemplate | null = null;
+    // Detect ## Player Character section(s) — parse immediately, no LLM needed
+    // Each ### sub-section under ## Player Characters becomes its own chunk
+    const playerCharChunks = chunks.filter(c => c.sectionType === "player_character");
+    let playerCharacterTemplates: PlayerCharacterTemplate[] = [];
 
     // Note to lore agent if a player character section exists
-    const playerCharNote = playerCharChunk
+    const playerCharNote = playerCharChunks.length > 0
         ? `\nNOTE: There is a ## Player Character section. Extract the character as kind="character" with properties.is_player_character=true. Do NOT invent backstory options — the player character template is handled separately.`
         : "";
 
@@ -410,7 +424,7 @@ ${chunk.content}
 CRITICAL RULES:
 - Use the EXACT names as written. Do not paraphrase, rename, or combine.
 - Write ONE lore_node for the PRIMARY entity this section is about (the ### heading).
-- Do NOT create nodes for secondary entities mentioned in passing — they will get their own dedicated section.
+- Do NOT create nodes for secondary entities written IN the description field or properties of the PRIMARY entity — they will get their own dedicated section.
 - Write lore_relations using the exact names of entities (they don't need to exist yet).
 - Descriptions must quote or closely paraphrase what the text says.
 - kind must be one of: character, faction, location, item, concept, event
@@ -441,8 +455,9 @@ CRITICAL RULES:
         edgesWritten.push({ from: String(edge.in), to: String(edge.out), type: edge.relation_type });
     }
 
-    // ── Write player character template to DB ────────────────────────────
-    if (playerCharChunk) {
+    // ── Write player character template(s) to DB ─────────────────────────
+    // Each ### sub-section under ## Player Characters produces its own template
+    for (const playerCharChunk of playerCharChunks) {
         const parsed = parsePlayerCharacterSection(playerCharChunk.content);
 
         // Find the lore_node that was written for this character (if any)
@@ -452,12 +467,13 @@ CRITICAL RULES:
         );
 
         // game_id will be stamped by the calling route (ingest.ts) which has it
-        // For now store with a placeholder — gets updated by ingest route
-        playerCharacterTemplate = await upsertPlayerCharacterTemplate({
+        // kind and status come from the parsed markdown (e.g. **Kind**: prebuilt)
+        const template = await upsertPlayerCharacterTemplate({
             game_id: "PENDING",  // overwritten by ingest.ts after this returns
             ...parsed,
             lore_node_id: pcLoreNode ? String(pcLoreNode.id) : null,
         });
+        playerCharacterTemplates.push(template);
     }
 
     // ── PHASE 3: Curator validation of Lore Graph ────────────────────────────
@@ -466,7 +482,7 @@ CRITICAL RULES:
     const curator = new Agent({
         id: "lore-curator-validator",
         name: "lore-curator-validator",
-        model: openrouter("minimax/minimax-m2.5"),
+        model: openrouter("minimax/minimax-m2.7"),
         instructions: "You are a lore curator. Review ingestion results and flag obvious gaps.",
         tools: {},
     });
@@ -530,7 +546,7 @@ One sentence per warning. If all looks correct, say "No issues found."
         warnings,
         summary: loreAgentResponse.text,
         worldReport,
-        playerCharacterTemplate,
+        playerCharacterTemplate: playerCharacterTemplates[0] ?? null,
         gameInfo: parsedGameInfo,
         completedAt: new Date().toISOString(),
     };

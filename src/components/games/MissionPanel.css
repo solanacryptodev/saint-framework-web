@@ -6,7 +6,7 @@
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: fit-content;
     overflow: hidden;
     font-family: 'Tomorrow', sans-serif;
     box-shadow:
@@ -137,8 +137,9 @@
 
 .threat-details {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 0.5rem;
+    justify-content: space-evenly;
 }
 
 .threat-level,

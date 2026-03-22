@@ -1,380 +1,230 @@
-# The Serpents and the Spy
+# The Iron Compact Chronicles
 
 ## Game Info
 
--  **Description**: A spy tasked with retrieving a crystalline archive containing a century of his enemy's darkest secrets, finds his own identity and loyalty shattered when he uncovers a buried truth within the data—a truth that reveals his own recruitment was built on a lie, forcing him to choose between completing his mission and exposing the masters who have controlled his entire life
-- **Plot**:  The world is on the verge of World War 3.
-
--  **Genre**: Spy Thriller
-
--  **Cost Tier**: free
-
--  **Price**: $0
-
--  **Tags**: mystery, action/adventure, spy, single-player, espionage
-
-## Characters
-
-### Cobra
-
--  **Role**: Disgraced American military officer turned hacker, now leads a group of disruptors looking to plunge the world into chaos.
-
--  **Faction**: SNAKE
-
--  **Location**: Unknown
-
--  **Description**: 
-
--  **Key Items**: 
-
--  **Relationships**: 
-
--  **Secrets**: Knows the location of the **CHRONOS Archive**, but can't get in without help. 
-
-  
-
-### Maren Coyle
-
--  **Role**: Black-market information broker, art dealer
-
--  **Faction**: The Hollow Market (neutral brokers)
-
--  **Location**: The Tangled Ward, Lower City
-
--  **Description**: Short, broad-shouldered, always eating. Runs a front business as a spice merchant. Her memory is perfect — she forgets nothing and sells what she knows.
-
--  **Key Items**: Owns a **Void Ledger** — a book that cannot be burned, stolen, or copied, containing records of every deal she has ever made.
-
--  **Relationships**: Seraphine Dusk owes her a significant debt. Knows the identity of the Pale Broker (but won't say). Distrusts the Thornguard.
-
--  **Secrets**: The Hollow Market was founded by the dead god's former high priest. Maren is the fifth generation keeper of this secret.
-
-  
-
-### Aldric Thorne
-
--  **Role**: Missing. Former Head Archivist of the Imperial Veil
-
--  **Faction**: Imperial Veil (status: unknown)
-
--  **Location**: Unknown — last seen near the **Underspire Gate, Sector 7**
-
--  **Description**: Elderly scholar with a reputation for ruthless scholarship. Vanished six months ago with three volumes of restricted lore. His clockwork assistant was found destroyed.
-
--  **Key Items**: Took the **Atlas of Sealed Vaults** when he vanished.
-
--  **Relationships**: Mentored Seraphine. Known to the Pale Broker.
-
--  **Secrets**: He descended into the Underspire voluntarily. He is alive and has found something that changed his allegiance.
-
-  
-
-### The Pale Broker
-
--  **Role**: Anonymous power broker
-
--  **Faction**: Suspected: The Reassembly (fourth faction)
-
--  **Location**: Unknown — communicates via **Shade Messengers**
-
--  **Description**: No verified sighting. Known only through intermediaries. Buys Shards at above-market prices and removes them from circulation.
-
--  **Key Items**: Allegedly possesses a **Shard of Cognition** — one of only three known god-fragments that affect thought.
-
--  **Relationships**: Known to Maren Coyle. Employs Thornguard deserters.
-
--  **Secrets**: Is orchestrating the reassembly of the dead god. Has a timeline.
-
-  
+- **Description**: A dying city-state where three factions fight over the last working forge, and a blacksmith's apprentice discovers she is heir to the compact that built it.
+- **Genre**: Dark Fantasy
+- **Cost Tier**: free
+- **Tags**: political, crafting, rebellion, secrets
 
 ---
-
-  
-
-## Factions
-
-  
-
-### The Imperial Veil
-
--  **Type**: Government / bureaucratic control
-
--  **Goal**: Maintain monopoly on Shard access and Underspire maps
-
--  **Base**: The Ashenveil Archive, Upper City
-
--  **Traits**: Bureaucratic, paranoid, internally fractured. Three sub-factions compete for succession.
-
--  **Resources**: Largest archive of lore in the empire. Controls all official Shard registrations.
-
--  **Weakness**: Corruption. Multiple members are secretly on the Pale Broker's payroll.
-
-  
-
-### The Hollow Market
-
--  **Type**: Neutral information and relic brokerage
-
--  **Goal**: Profit. Survival. Institutional continuity.
-
--  **Base**: The Tangled Ward, Lower City
-
--  **Traits**: Strictly neutral, deeply paranoid about being used as a weapon by any faction.
-
--  **Resources**: Perfect information on relic movements. A network of dead-drop locations throughout Ashenveil.
-
--  **Weakness**: Their neutrality becomes a liability when forced to choose sides.
-
-  
-
-### The Thornguard
-
--  **Type**: Militant relic-destruction cult
-
--  **Goal**: Destroy all Shards before the god can be reassembled
-
--  **Base**: The Ember Bastion, Old City ruins
-
--  **Traits**: Fanatical, disciplined, willing to sacrifice civilians to prevent reassembly.
-
--  **Resources**: Superior combat training. A small number of **Null Shards** — dead fragments that can cancel active Shards.
-
--  **Weakness**: Their extremism drives potential allies away. Leadership is compromised (Pale Broker infiltration).
-
-  
-
-### The Reassembly
-
--  **Type**: Secret cult / conspiracy
-
--  **Goal**: Resurrect the dead god
-
--  **Base**: Unknown — believed to be inside the Underspire
-
--  **Traits**: Patient, methodical, embedded in all other factions.
-
--  **Resources**: Unknown number of Shards. The Pale Broker's resources. Time.
-
--  **Weakness**: Unknown to others — therefore no active resistance.
-
-  
-
----
-
-  
-
-## Locations
-
-  
-
-### The Ashenveil Archive
-
--  **Kind**: Location (institution)
-
--  **District**: Upper City
-
--  **Description**: A vast obsidian building seven stories tall, filled with classified lore, restricted maps, and confiscated relics. The top floor is accessible only to the Head Archivist. The basement connects, via a sealed door, to the Underspire.
-
--  **Controlled by**: The Imperial Veil
-
--  **Notable**: The sealed basement door has been unlocked from the inside recently. No one has reported it.
-
--  **Connected to**: Underspire Gate Sector 7, The Pale Broker's network
-
-  
-
-### The Tangled Ward
-
--  **Kind**: Location (district)
-
--  **District**: Lower City
-
--  **Description**: A labyrinthine market district where the streets shift slightly between visits due to ongoing subsidence from Underspire tunnels below. Black-market goods move freely. The Hollow Market operates three storefronts here.
-
--  **Controlled by**: No one officially. The Hollow Market has de facto authority.
-
--  **Notable**: A subsidence event three weeks ago opened a new crack in the street — it leads down 40 feet to a previously unknown Underspire tunnel.
-
--  **Connected to**: The Hollow Market network, New Underspire tunnel (unmapped)
-
-  
-
-### The Underspire
-
--  **Kind**: Location (dungeon / network)
-
--  **District**: Below all districts
-
--  **Description**: A vast network of vaults, corridors, and sealed chambers built by the dead god's civilization. Contains most of the remaining unregistered Shards. The deeper you go, the more reality becomes unstable — memory bleeds, time skips, and the dead god's thoughts are audible as a low hum.
-
--  **Controlled by**: No one. Contested.
-
--  **Notable**: Aldric Thorne is somewhere inside. Sector 7 is where the Reassembly has established a foothold.
-
--  **Connected to**: The Ashenveil Archive (basement), The Tangled Ward (new crack), Underspire Gate Sector 7
-
-  
-
-### The Ember Bastion
-
--  **Kind**: Location (fortress, ruins)
-
--  **District**: Old City
-
--  **Description**: A crumbling fortress that the Thornguard has fortified with salvaged materials and Null Shard barriers. The interior smells of burned relic-dust. Null Shard energy makes magical items unreliable within 50 meters.
-
--  **Controlled by**: The Thornguard
-
--  **Notable**: Two Thornguard captains have gone missing in the last month. The Pale Broker is suspected.
-
--  **Connected to**: Old City ruins, Thornguard patrol routes
-
-  
-
----
-
-  
-
-## Items
-
-  
-
-### Resonance Compass
-
--  **Kind**: Item (navigation tool)
-
--  **Owner**: Seraphine Dusk
-
--  **Description**: A brass compass with a needle made from a sliver of Shard material. Points toward the nearest active Shard within a half-mile radius. The needle trembles and bleeds when a Shard of Cognition is nearby.
-
--  **Special**: When within range of the Underspire, it begins pointing downward — and occasionally shows directions that don't correspond to any known Shard.
-
-  
-
-### Void Ledger
-
--  **Kind**: Item (artifact, record)
-
--  **Owner**: Maren Coyle
-
--  **Description**: A black-bound book that cannot be destroyed, stolen, or duplicated. Writing appears in it automatically when Maren witnesses or participates in a significant transaction. She cannot write in it voluntarily — the entries write themselves.
-
--  **Special**: The oldest entries, near the back, are in a language that predates the empire. They appear to describe transactions made by the dead god before its death.
-
-  
-
-### Atlas of Sealed Vaults
-
--  **Kind**: Item (map, forbidden lore)
-
--  **Owner**: Aldric Thorne (missing)
-
--  **Description**: Three volumes of hand-annotated maps covering every known and suspected Underspire vault. Taken from restricted Archive storage. The annotations in Aldric's handwriting grow increasingly erratic toward the end.
-
--  **Special**: The final pages of Volume 3 were written after Aldric entered the Underspire — the ink is a different color, and some pages appear to have been written simultaneously from both ends.
-
-  
-
-### Null Shard
-
--  **Kind**: Item (weapon / suppressor)
-
--  **Owner**: The Thornguard (multiple)
-
--  **Description**: A dead fragment of the shattered god — one that was never charged with divine energy. Emits a suppression field that cancels active Shard abilities within proximity.
-
--  **Special**: Exposure to Null Shards for extended periods causes memory degradation in humans. The Thornguard knows this and considers it acceptable.
-
-  
-
-### Shard of Cognition
-
--  **Kind**: Item (god-fragment, artifact)
-
--  **Owner**: The Pale Broker (alleged)
-
--  **Description**: One of three known Shards that affect thought rather than physical reality. Allows the holder to read surface thoughts, implant suggestions, and — at full activation — rewrite recent memories.
-
--  **Special**: One of the three pieces needed to restore the dead god's ability to think. The Pale Broker has had it for two years.
-
-  
-
-### Shade Messengers
-
--  **Kind**: Item (communication tool)
-
--  **Owner**: The Pale Broker
-
--  **Description**: Small shadow-constructs, roughly bird-shaped, that carry messages and dissolve upon delivery. They leave no trace except a faint smell of cold iron.
-
--  **Special**: Can pass through walls and locked doors. Cannot cross Null Shard barriers.
-
-  
-
----
-
-  
-
-## History & Secrets
-
-  
-
-- The dead god was not killed by an outside force — it **chose to fragment** itself into Shards to prevent something worse from entering the world. The Reassembly doesn't know this. If they succeed, they will release what the god was containing.
-
-- Seraphine's compass has been pointing at a location inside the Archive basement for three days. She hasn't noticed yet.
-
-- The new crack in the Tangled Ward opens directly into the chamber where Aldric Thorne has been living for six months. He knows about the crack. He has chosen not to emerge.
-
-- The Void Ledger's oldest entries are a contract. The dead god sold something to an unnamed buyer. The price was the god's own death.
-
-  
-
----
-
-  
 
 ## Player Character
 
-  
+**Name**: Sable Voss
+**Role**: Blacksmith's Apprentice
+**Description**: Lean and burn-scarred, with a memory for metallurgy and a reputation for honesty in a city of liars. Raised in the Forge District. Does not know she is the last living Compact signatory by blood.
 
-You are an outsider drawn into the orbit of the Ashenveil Archive — skilled enough to survive, connected enough to be dangerous, and carrying a secret that hasn't fully revealed itself yet.
+**Fixed Traits**:
+- Knowledge of metalworking and ore identification
+- Fluency in the old Compact script (reads but does not know the significance)
+- Recognized by Forge District residents
 
-  
+**Backstory Options**:
+- Option A: Orphan — raised by the master smith Dren. Owes him a debt she can never repay.
+- Option B: Foundling — left at the forge with only a iron token bearing the Compact seal.
 
--  **Name**: Kael Duskmantle
+**Starting Items** (pick 1):
+- Journeyman's Hammer — masterwork, personal, weight 0.8
+- Compact Token — iron disk, origin unknown, weight 0.2
 
--  **Description**: A freelance lore-seeker who trades in information the Imperial Veil would rather keep buried. Known to Maren Coyle, unknown to everyone else.
+**Starting Location**: The Working Forge, Forge District
 
--  **Starting Location**: The Ashenveil Archive, Lower Reading Hall
+---
 
-  
+## Characters
 
--  **Backstory Options**:
+### Sable Voss
+*See Player Character section above.*
 
--  **The Exile**: You were expelled from the Imperial Veil three years ago for copying restricted maps. You know the Archive's layout better than anyone who still works there. The Keeper has orders to turn you away — but the basement door was left unlocked.
+### Dren Ashcroft
+Master smith of the last working forge in Ironholt. Broad-shouldered, missing two fingers on his left hand from a press accident fifteen years ago. Former Compact enforcer who renounced his oath after the Collapse. He knows what Sable is and has hidden it from her her entire life. His hidden goal is to delay her discovery until the Compact Vault can be sealed permanently.
 
--  **The Debtor**: Maren Coyle pulled you out of a bad situation six months ago. You owe her something significant, and she's finally calling it in. She wants you inside the Archive. She hasn't told you why.
+**Relationships**: Mentor to Sable Voss. Pays tribute to the Ironwarden Collective. Distrusts the Pale Assembly.
 
--  **The Inheritor**: You recently discovered that your late parent was the last Underspire Warden. You don't know what that means yet. But someone left a Resonance Compass on your doorstep, and it's been pointing at the Archive basement for three days.
+### Mira Loch
+Chancellor of the Pale Assembly. Silver-haired, soft-spoken, and ruthless in negotiation. Former cartographer. She alone knows the location of the secondary forge beneath the Ashfield — and has told no one. Her hidden goal is to reactivate the secondary forge before the Ironwarden Collective discovers it.
 
-  
+**Relationships**: Leads the Pale Assembly. Employs Sable Voss indirectly through Dren. Opposes the Ironwarden Collective openly.
 
--  **Traits**: [Perceptive], [Cautious], [Marked by the Underspire]
+### Cavel
+Ironwarden lieutenant. Young, ideologically rigid, genuinely believes in the Collective's cause. Has begun questioning the leadership after witnessing a purge. His hidden goal is to find evidence the Collective leadership is corrupt without destroying the faction itself.
 
--  **Fixed**: Knowledge of lore authentication techniques, fluency in two dead languages
+**Relationships**: Member of the Ironwarden Collective. Aware of Sable Voss from Forge District reports. Suspects Mira Loch is hiding something.
 
-  
+### The Archivist
+Unnamed. Caretaker of the Compact Vault in the Undercroft. Has not spoken in eleven years. Communicates by placing documents on a stone shelf. Their identity predates the Collapse. Does not leave the Vault.
 
--  **Starting Items**: Choose 1:
+**Relationships**: Guards the Compact Vault. Neutral to all factions. Known only to Dren Ashcroft.
 
--  **Resonance Compass**: Points toward active Shards within half a mile. Currently pointing down.
+---
 
--  **Null Shard Fragment**: A dead shard sliver. Cancels minor magical effects within arm's reach. The Thornguard would pay well for it.
+## Factions
 
--  **Void Ink**: A vial of ink that cannot be destroyed or copied. Whatever you write with it becomes permanent record.
+### The Pale Assembly
+A council of merchants and scholars who control Ironholt's food supply and external trade. They believe order is maintained through economic leverage, not force. Publicly neutral on the forge dispute; privately desperate to control it. Their doctrine favors collective social action over individual violence.
 
-  
+**Base**: The Assembly Hall, Upper Ironholt
+**Known to Player**: Yes
+**Concepts Championed**: order, commerce, secrecy
 
--  **Allow Custom Name**: true
+### The Ironwarden Collective
+A militant workers' union that controls the Forge District streets. They want the forge nationalized and its output distributed equally. Increasingly willing to use violence to achieve this. Leadership has been partially compromised by Pale Assembly bribes, though rank-and-file members are genuinely ideological.
 
--  **Allow Portrait**: true
+**Base**: The Union Hall, Forge District
+**Known to Player**: Yes
+**Concepts Championed**: equality, solidarity, rebellion
+
+### The Compact Remnant
+A secret faction of three surviving members who know the forge's true function: it is a binding machine, not a production facility. The Compact sealed something beneath Ironholt, and the forge is the lock. They will not reveal this under any circumstances. The Archivist is one of three members.
+
+**Base**: The Compact Vault, Undercroft (hidden)
+**Known to Player**: No
+**Concepts Championed**: preservation, silence, sacrifice
+
+---
+
+## Locations
+
+### The Working Forge
+The only functional forge remaining in Ironholt. Located in the Forge District. Smells of iron and coal smoke. The bellows mechanism is original Compact engineering — no one alive fully understands it. A crack in the east wall has been spreading for two years.
+
+**Region**: Forge District
+**Accessible**: Yes
+**Danger Level**: 0.1
+**Secrets**: The forge is not a forge. It is a binding seal. Heating it past a certain threshold weakens the lock beneath.
+
+### The Assembly Hall
+The governing seat of the Pale Assembly. High ceilings, cold marble, portraits of chancellors going back four hundred years. The most recent portrait is covered with a cloth.
+
+**Region**: Upper Ironholt
+**Accessible**: Yes (public galleries only)
+**Danger Level**: 0.2
+**Secrets**: A passage behind the Chancellor's fireplace leads to the secondary forge access point in the Ashfield.
+
+### The Union Hall
+Headquarters of the Ironwarden Collective. Loud, cramped, and covered in posted notices. The back room is where the real decisions are made — access requires rank.
+
+**Region**: Forge District
+**Accessible**: Yes (public areas)
+**Danger Level**: 0.3
+**Secrets**: The leadership's meeting records for the last six months show payments from an Assembly-linked account.
+
+### The Compact Vault
+A sealed chamber beneath the Undercroft. Accessible only via a key held by The Archivist. The air inside is eleven years stale. Shelves of iron-bound documents line every wall. At the center is a plinth with a single unlit lamp.
+
+**Region**: Undercroft
+**Accessible**: No
+**Danger Level**: 0.6
+**Secrets**: The lamp lights when a blood signatory enters the room. The documents are not historical records — they are instructions for resealing the binding should it ever fail.
+
+### The Undercroft
+A network of maintenance tunnels beneath Ironholt, mostly forgotten. Used by smugglers. Partially flooded in the eastern sections. The Compact Vault is at the deepest accessible point.
+
+**Region**: Undercroft
+**Accessible**: Yes (with a guide)
+**Danger Level**: 0.5
+**Secrets**: Three tunnel sections have been deliberately collapsed. Someone is controlling which paths remain open.
+
+### The Forge District
+The working-class neighborhood surrounding The Working Forge. Dense, loud, loyal to the Collective on the surface. Sable Voss grew up here. Residents know her face.
+
+**Region**: Forge District
+**Accessible**: Yes
+**Danger Level**: 0.2
+**Secrets**: A network of signal-knocks among residents alerts the neighborhood when Collective enforcers are moving. Dren Ashcroft knows the codes.
+
+### Upper Ironholt
+The wealthy administrative district. Clean streets, locked gates after dark. Pale Assembly influence is total here.
+
+**Region**: Upper Ironholt
+**Accessible**: Yes (by day)
+**Danger Level**: 0.1
+**Secrets**: Three Assembly council members have been replaced by proxies in the last year. Their predecessors are not dead — they are being held in the Assembly Hall's lower levels.
+
+---
+
+## Items
+
+### Journeyman's Hammer
+A masterwork hammer forged by Dren Ashcroft. Balanced for precision work, not combat — though it could serve in a pinch. Has Sable Voss's initials stamped on the handle.
+
+**Owner**: Sable Voss (if chosen)
+**Accessible to Player**: Yes
+**Known to Player**: Yes
+
+### Compact Token
+An iron disk the size of a palm, stamped with a seal no one in the city recognizes. Found with Sable Voss as an infant. Warm to the touch near the Working Forge for reasons no one has explained.
+
+**Owner**: Sable Voss (if chosen)
+**Accessible to Player**: Yes
+**Known to Player**: Yes
+
+### The Binding Ledger
+Three iron-bound volumes held in the Compact Vault. Each volume documents one of the three things sealed beneath Ironholt. The Archivist will not allow them to leave the Vault.
+
+**Owner**: The Archivist
+**Location**: The Compact Vault
+**Accessible to Player**: No
+**Known to Player**: No
+
+### Secondary Forge Key
+A brass key held by Mira Loch. Unlocks the passage from the Assembly Hall fireplace to the Ashfield access point. She keeps it on her person at all times.
+
+**Owner**: Mira Loch
+**Accessible to Player**: No
+**Known to Player**: No
+
+### Assembly Payment Records
+A ledger in the Union Hall back room showing six months of payments from an Assembly-linked account to the Ironwarden leadership. Cavel knows these exist but has not yet retrieved them.
+
+**Location**: The Union Hall
+**Accessible to Player**: No (requires Collective rank or theft)
+**Known to Player**: No
+
+---
+
+## Concepts
+
+### The Binding
+The true purpose of the Working Forge — a seal that contains something beneath Ironholt. Only the Compact Remnant fully understands it. The Compact Token resonates with it. Heating the forge past threshold weakens the seal.
+
+**Emotional Valence**: Negative (fear, dread)
+**Known to Player at Start**: No
+
+### The Compact
+The original governing agreement that built Ironholt and created the binding seal. Dissolved after the Collapse. Three signatories remain by blood. The document still has legal force by its own terms.
+
+**Emotional Valence**: Neutral (historical weight)
+**Known to Player at Start**: Partial — Sable knows the word, not the significance
+
+### The Collapse
+An event eleven years ago that destroyed the secondary forge and killed most of the Compact membership. Official history says it was an industrial accident. The Archivist knows it was deliberate.
+
+**Emotional Valence**: Negative (grief, suspicion)
+**Known to Player at Start**: Yes (as public history, not truth)
+
+### Forge Rights
+The political concept driving the Collective — who controls the forge controls Ironholt's survival. A genuine ideological argument with legitimate grievances at its core.
+
+**Emotional Valence**: Positive (hope, justice)
+**Known to Player at Start**: Yes
+
+---
+
+## History & Secrets
+
+The Working Forge was not built to produce iron. It was built by the original Compact as a binding mechanism — a lock sealed with heat, maintained by a living signatory's presence. The thing beneath Ironholt has never been named in surviving documents. The Archivist knows what it is. The Binding Ledger describes its nature across three volumes but uses a cipher only a blood signatory can read without triggering a failsafe.
+
+The Collapse was engineered by a Compact member who believed the binding was wrong — that whatever is beneath Ironholt deserves to be free. That member died in the event. Their identity is in the Binding Ledger volume three.
+
+Sable Voss is the last living blood signatory. The Compact Token she carries is a recognition object — it will respond to the plinth lamp in the Vault, lighting it without flame when she enters. Dren Ashcroft has known since her infancy and has spent eleven years ensuring she never went near the Vault or the forge's lower mechanisms.
+
+The Pale Assembly does not know about the binding. Mira Loch wants the secondary forge for economic leverage, not ideological reasons. The Ironwarden Collective does not know about the binding either. Cavel's suspicion of leadership corruption is correct — the leadership has been bribed, but not by anyone who knows the forge's true function.
+
+**Unresolved tensions for world threads**:
+1. The forge crack is spreading — if it reaches the bellows housing, the seal weakens automatically
+2. Cavel is about to act on his suspicions — the Collective will fracture when he does
+3. Mira Loch's secondary forge plan will bring her into the Undercroft — dangerously close to the Vault
+4. The Archivist has left a document on the shelf for the first time in eleven years — it is addressed to Sable Voss by name
+5. The Compact Token has started getting warmer, suggesting the seal is already weakening

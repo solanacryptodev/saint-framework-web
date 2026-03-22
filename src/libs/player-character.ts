@@ -19,7 +19,14 @@
 
 import { getDB } from "./surreal";
 import { Table } from "surrealdb";
-import { PlayerCharacterTemplate, PlayerCharacter, BackstoryOption, StartingItemOption } from "./types";
+import {
+    PlayerCharacterTemplate,
+    PlayerCharacter,
+    BackstoryOption,
+    StartingItemOption,
+    CharacterKind,
+    CharacterStatus,
+} from "./types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,16 +35,17 @@ export async function upsertPlayerCharacterTemplate(
 ): Promise<PlayerCharacterTemplate> {
     const db = await getDB();
 
-    // One template per game — upsert on game_id
+    // Upsert on game_id + base_name — allows multiple templates per game (one per character)
     const [existing] = await db.query<[PlayerCharacterTemplate[]]>(
-        `SELECT * FROM player_character_template WHERE game_id = $gid LIMIT 1`,
-        { gid: template.game_id }
+        `SELECT * FROM player_character_template WHERE game_id = $gid AND base_name = $base_name LIMIT 1`,
+        { gid: template.game_id, base_name: template.base_name }
     );
 
     if (existing?.[0]) {
         const [updated] = await db.query<[PlayerCharacterTemplate[]]>(
             `UPDATE $id SET
-         base_name = $base_name, description = $description,
+         kind = $kind, status = $status,
+         description = $description,
          fixed_traits = $fixed_traits, backstory_options = $backstory_options,
          trait_options = $trait_options, item_options = $item_options,
          max_item_picks = $max_item_picks, allow_custom_name = $allow_custom_name,
@@ -82,6 +90,49 @@ export async function getPlayerCharacter(
     return rows?.[0] ?? null;
 }
 
+export async function getCharacterTemplates(
+    gameId: string,
+    status?: string
+): Promise<PlayerCharacterTemplate[]> {
+    const db = await getDB();
+    const [rows] = await db.query<[PlayerCharacterTemplate[]]>(
+        status
+            ? `SELECT * FROM player_character_template WHERE game_id = $gid AND status = $status`
+            : `SELECT * FROM player_character_template WHERE game_id = $gid`,
+        { gid: gameId, status }
+    );
+    return rows ?? [];
+}
+
+export async function getCharacterTemplateById(
+    templateId: string
+): Promise<PlayerCharacterTemplate | null> {
+    const db = await getDB();
+
+    // Ensure the ID has the table prefix for direct record lookup
+    const fullId = templateId.includes(':')
+        ? templateId
+        : `player_character_template:${templateId}`;
+
+    const [rows] = await db.query<[PlayerCharacterTemplate[]]>(
+        `SELECT * FROM type::thing('player_character_template', $id) LIMIT 1`,
+        { id: templateId.includes(':') ? templateId.split(':')[1] : templateId }
+    );
+    return rows?.[0] ?? null;
+}
+
+export async function getPlayerCharacterForGame(
+    playerId: string,
+    gameId: string
+): Promise<PlayerCharacter | null> {
+    const db = await getDB();
+    const [rows] = await db.query<[PlayerCharacter[]]>(
+        `SELECT * FROM player_character WHERE player_id = $pid AND game_id = $gid ORDER BY created_at DESC LIMIT 1`,
+        { pid: playerId, gid: gameId }
+    );
+    return rows?.[0] ?? null;
+}
+
 // ── ## Player Character section parser ───────────────────────────────────────
 // Called by the lore ingestion agent after chunking.
 // Parses the fixed-field markdown format the world-builder writes.
@@ -89,6 +140,8 @@ export async function getPlayerCharacter(
 export interface ParsedPlayerCharacterSection {
     base_name: string;
     description: string;
+    kind: CharacterKind;
+    status: CharacterStatus;
     fixed_traits: string[];
     backstory_options: BackstoryOption[];
     trait_options: string[];
@@ -107,6 +160,8 @@ export function parsePlayerCharacterSection(
 
     let base_name = "";
     let description = "";
+    let kind: CharacterKind = "template";
+    let status: CharacterStatus = "published";
     let fixed_traits: string[] = [];
     let backstory_options: BackstoryOption[] = [];
     let trait_options: string[] = [];
@@ -139,6 +194,16 @@ export function parsePlayerCharacterSection(
                 case "description":
                 case "role":
                     description = value;
+                    break;
+                case "kind":
+                    if (["template", "prebuilt", "custom"].includes(value.toLowerCase())) {
+                        kind = value.toLowerCase() as CharacterKind;
+                    }
+                    break;
+                case "status":
+                    if (["draft", "published", "archived"].includes(value.toLowerCase())) {
+                        status = value.toLowerCase() as CharacterStatus;
+                    }
                     break;
                 case "fixed":
                 case "fixed_traits":
@@ -206,7 +271,7 @@ export function parsePlayerCharacterSection(
                     if (currentBackstory) backstory_options.push(currentBackstory);
                     currentBackstory = {
                         id: slugify(namedMatch[1]),
-                        name: namedMatch[1].trim(),
+                        label: namedMatch[1].trim(),
                         description: namedMatch[2].trim(),
                     };
                 } else if (currentBackstory) {
@@ -215,7 +280,7 @@ export function parsePlayerCharacterSection(
                 } else {
                     backstory_options.push({
                         id: slugify(text),
-                        name: text,
+                        label: text,
                         description: "",
                     });
                 }
@@ -255,6 +320,8 @@ export function parsePlayerCharacterSection(
     return {
         base_name: base_name || "The Protagonist",
         description,
+        kind,
+        status,
         fixed_traits,
         backstory_options,
         trait_options,

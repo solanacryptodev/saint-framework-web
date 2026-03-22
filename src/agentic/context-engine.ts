@@ -54,10 +54,10 @@ export async function assembleACEContext(
   `, { sessionId });
 
     const [playerRows] = await db.query<[any[]]>(`
-    SELECT world_actor.name AS actor_name,
+    SELECT world_agent.name AS actor_name,
            world_location.name AS location_name,
-           world_actor.state AS actor_state
-    FROM world_actor
+           world_agent.state AS actor_state
+    FROM world_agent
     WHERE kind = 'player' AND active = true
     FETCH location_id AS world_location
     LIMIT 1

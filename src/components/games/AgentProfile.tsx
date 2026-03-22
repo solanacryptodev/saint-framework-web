@@ -82,7 +82,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                 <div class="status-bars">
                     <div class="status-item">
                         <div class="status-label">
-                            <span>NARRATIVE WEIGHT</span>
+                            <span>STORY WEIGHT</span>
                             <span class="status-value">{props.operativeStatus.narrativeWeight.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -94,7 +94,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                     </div>
                     <div class="status-item">
                         <div class="status-label">
-                            <span>EMOTIONAL STATE</span>
+                            <span>MOOD</span>
                             <span class="status-value negative">{formatValue(props.operativeStatus.emotionalState)}</span>
                         </div>
                         <div class="status-track">
@@ -106,7 +106,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                     </div>
                     <div class="status-item">
                         <div class="status-label">
-                            <span>INFLUENCE REACH</span>
+                            <span>PLAYER PULL</span>
                             <span class="status-value">{props.operativeStatus.influenceReach.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -119,13 +119,13 @@ export default function AgentProfile(props: AgentProfileProps) {
                 </div>
             </div>
 
-            {/* Psychological Profile */}
+            {/* Psychological Profile — drawn_to gravitational signature */}
             <div class="profile-section">
-                <div class="section-title">PSYCHOLOGICAL PROFILE</div>
+                <div class="section-title">DRAWN TO</div>
                 <div class="status-bars">
                     <div class="status-item">
                         <div class="status-label">
-                            <span>TRAUMA INDEX</span>
+                            <span>DRAWN TO WOUNDS</span>
                             <span class="status-value">{props.psychologicalProfile.traumaIndex.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -137,7 +137,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                     </div>
                     <div class="status-item">
                         <div class="status-label">
-                            <span>RESOLVE</span>
+                            <span>DRAWN TO HOPE</span>
                             <span class="status-value">{props.psychologicalProfile.resolve.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -149,7 +149,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                     </div>
                     <div class="status-item">
                         <div class="status-label">
-                            <span>CURIOSITY</span>
+                            <span>DRAWN TO MYSTERY</span>
                             <span class="status-value">{props.psychologicalProfile.curiosity.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -162,9 +162,9 @@ export default function AgentProfile(props: AgentProfileProps) {
                 </div>
             </div>
 
-            {/* Ideological Alignment */}
+            {/* Ideological Alignment → Beliefs */}
             <div class="profile-section">
-                <div class="section-title">IDEOLOGICAL ALIGNMENT</div>
+                <div class="section-title">BELIEFS</div>
                 <div class="alignment-list">
                     <div class="alignment-item">
                         <span class="alignment-indicator positive">+</span>
@@ -189,13 +189,13 @@ export default function AgentProfile(props: AgentProfileProps) {
                 </div>
             </div>
 
-            {/* Susceptibility Vector */}
+            {/* Susceptibility Vector → Responds To */}
             <div class="profile-section">
-                <div class="section-title">SUSCEPTIBILITY VECTOR</div>
+                <div class="section-title">RESPONDS TO</div>
                 <div class="status-bars">
                     <div class="status-item">
                         <div class="status-label">
-                            <span>MORAL</span>
+                            <span>MORAL CHOICES</span>
                             <span class="status-value">{props.susceptibilityVector.moral.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -207,7 +207,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                     </div>
                     <div class="status-item">
                         <div class="status-label">
-                            <span>METHOD</span>
+                            <span>METHOD CHOICES</span>
                             <span class="status-value">{props.susceptibilityVector.method.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -219,7 +219,7 @@ export default function AgentProfile(props: AgentProfileProps) {
                     </div>
                     <div class="status-item">
                         <div class="status-label">
-                            <span>SOCIAL</span>
+                            <span>SOCIAL CHOICES</span>
                             <span class="status-value">{props.susceptibilityVector.social.toFixed(2)}</span>
                         </div>
                         <div class="status-track">
@@ -232,12 +232,12 @@ export default function AgentProfile(props: AgentProfileProps) {
                 </div>
             </div>
 
-            {/* Operational Capacity */}
+            {/* Operational Capacity → Energy */}
             <div class="profile-section operational-capacity">
-                <div class="section-title">OPERATIONAL CAPACITY</div>
+                <div class="section-title">ENERGY</div>
                 <div class="action-points">
                     <div class="action-label">
-                        <span>ACTION POINTS</span>
+                        <span>ENERGY</span>
                         <span class="action-value">{props.actionPoints.current} / {props.actionPoints.max}</span>
                     </div>
                     <div class="action-track">

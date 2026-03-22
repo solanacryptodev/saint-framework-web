@@ -23,6 +23,18 @@ import { getDB } from "./surreal";
 import { Table, surql } from "surrealdb";
 import { CostTier, GameRecord } from "./types";
 
+// ── Helper: Touch updated_at timestamp ─────────────────────────────────────────
+// Uses SurrealQL's time::now() to properly update the timestamp
+
+export async function gameUpdatedAt(gameId: string) {
+    const db = await getDB();
+    const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
+    return db.query(
+        `UPDATE type::thing($id) SET updated_at = time::now()`,
+        { id: recordId }
+    );
+}
+
 // ── CRUD ────────────────────────────────────────────────────────────────────
 
 export async function createGame(
@@ -45,7 +57,6 @@ export async function createGame(
     const normalizedCreatorId = creatorId.includes(":")
         ? creatorId.slice(creatorId.indexOf(":") + 1)
         : creatorId;
-    const now = new Date().toISOString();
     const [record] = await db.create<GameRecord>(new Table("game")).content({
         creator_id: normalizedCreatorId,
         created_by: params.createdBy,
@@ -58,7 +69,7 @@ export async function createGame(
         cost: params.cost ?? 0,
         status: "draft",
         source_file: params.sourceFile ?? "",
-        cover_image: params.coverImage ?? null,
+        ...(params.coverImage ? { cover_image: params.coverImage } : {}),
         lore_nodes: 0,
         lore_edges: 0,
         world_agents: 0,
@@ -68,8 +79,6 @@ export async function createGame(
         world_events: 0,
         world_threads: 0,
         visibility: "private",
-        created_at: now,
-        updated_at: now,
     });
     return record;
 }
@@ -92,14 +101,15 @@ export async function updateGameStatus(
     const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
     const patch: Record<string, unknown> = {
         status,
-        updated_at: new Date().toISOString(),
         ...(stats ?? {}),
     };
-    if (status === "ready") patch.launched_at = new Date().toISOString();
-    return db.query(
+    if (status === "ready") patch.launched_at = true;
+    await db.query(
         `UPDATE type::thing($id) SET ${Object.keys(patch).map(k => `${k} = $${k}`).join(", ")}`,
         { id: recordId, ...patch }
     );
+    // Also update the updated_at timestamp
+    await gameUpdatedAt(gameId);
 }
 
 export async function updateGameInfo(
@@ -114,18 +124,19 @@ export async function updateGameInfo(
 ) {
     const db = await getDB();
     const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
-    const patch: Record<string, unknown> = {
-        updated_at: new Date().toISOString(),
-    };
+    const patch: Record<string, unknown> = {};
     if (info.description !== undefined) patch.description = info.description;
     if (info.genre !== undefined) patch.genre = info.genre;
     if (info.tags !== undefined) patch.tags = info.tags;
     if (info.cost_tier !== undefined) patch.cost_tier = info.cost_tier;
     if (info.cost !== undefined) patch.cost = info.cost;
-    return db.query(
+    // Let schema handle updated_at with DEFAULT time::now(), don't set it explicitly
+    await db.query(
         `UPDATE type::thing($id) SET ${Object.keys(patch).map(k => `${k} = $${k}`).join(", ")}`,
         { id: recordId, ...patch }
     );
+    // Also update the updated_at timestamp
+    await gameUpdatedAt(gameId);
 }
 
 export async function getGame(gameId: string): Promise<GameRecord | null> {
@@ -203,4 +214,10 @@ export async function updateGameCreatedBy(gameId: string, createdBy: string) {
         `UPDATE type::thing($id) SET created_by = $createdBy, visibility = 'public', status = 'ready', updated_at = time::now()`,
         { id: recordId, createdBy }
     );
+}
+
+export function sanitizeGameId(raw: string): string {
+    const s = String(raw);
+    const colon = s.indexOf(":");
+    return colon >= 0 ? s.slice(colon + 1) : s;
 }

@@ -256,12 +256,11 @@ export async function validateToken(token: string): Promise<PlayerRecord> {
     const client = new Surreal();
     try {
         await client.connect(getEnvVar("SURREALDB_URL", "ws://localhost:8000/rpc"));
+        await client.authenticate(token);
         await client.use({
             namespace: getEnvVar("SURREALDB_NS", "narrative"),
             database: getEnvVar("SURREALDB_DB", "engine"),
         });
-
-        await client.authenticate(token);
 
         const [player] = await client.query<[PlayerRecord[]]>(`SELECT * FROM $auth`);
         if (!player?.[0]) throw new Error("Token valid but no player record found");

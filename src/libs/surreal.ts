@@ -53,7 +53,7 @@ import type {
     AgentDefinition,
     NarrativeEvent
 } from "./types";
-import { applySchema } from "./schemas";
+import { applySchema, applyGameSchema, applyPlayerCharacterSchema, applyEntityAssetSchema } from "./schemas";
 
 // ── Environment variable helper ─────────────────────────────────────────────
 // Trims whitespace/newlines that can cause authentication failures
@@ -87,6 +87,9 @@ export async function getDB(): Promise<Surreal> {
     if (!_schemaApplied) {
         await applySchema(_db);
         await applyAuthSchema(_db);
+        await applyGameSchema();
+        await applyPlayerCharacterSchema();
+        await applyEntityAssetSchema();
         _schemaApplied = true;
     }
     return _db;
@@ -179,7 +182,7 @@ export async function getWorldSnapshot(sessionId: string): Promise<WorldSnapshot
     );
 
     return {
-        agents: agents ?? [],
+        actors: agents ?? [],
         locations: locations ?? [],
         items: items ?? [],
         events: events ?? [],

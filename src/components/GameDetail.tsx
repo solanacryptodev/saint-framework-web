@@ -75,6 +75,17 @@ export default function GameDetail(props: GameDetailProps) {
     }
   };
 
+  const handlePlayNow = async () => {
+    console.log('handlePlayNow', props.game);
+    if (!props.game) {
+      alert('Game not found');
+      return;
+    }
+
+    // Navigate to the play page - the play page will handle session start
+    navigate(`/play/game/${params.gameTitle}/play`, { replace: true });
+  };
+
   const handleBackToGames = () => {
     navigate('/play');
   };
@@ -91,7 +102,7 @@ export default function GameDetail(props: GameDetailProps) {
     <Show
       when={!showGameplay()}
       fallback={
-        <GeneralGame onBack={() => setShowGameplay(false)} />
+        <GeneralGame gameId={props.game?.id!} onBack={() => setShowGameplay(false)} />
       }
     >
       <div class="game-detail">
@@ -213,7 +224,7 @@ export default function GameDetail(props: GameDetailProps) {
                 </div>
                 <div class="free-subtitle">No purchase required</div>
               </div>
-              <button class="play-now-btn">Play Now</button>
+              <button class="play-now-btn" onClick={handlePlayNow}>Play Now</button>
             </Show>
             <button class="wishlist-btn">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
