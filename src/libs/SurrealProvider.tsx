@@ -48,7 +48,7 @@ import {
     type Accessor,
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { createMutation, useMutation } from "@tanstack/solid-query";
+import { useMutation } from "@tanstack/solid-query";
 import { Surreal } from "surrealdb";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -104,13 +104,13 @@ export function SurrealProvider(props: SurrealProviderProps) {
         status: "disconnected",
     });
 
-    const mutation = useMutation(() => ({
+    const { mutateAsync, isError, error, reset } = useMutation(() => ({
         mutationFn: async () => {
             setStore("status", "connecting");
-            await store.instance.connect(props.endpoint, props.params);
+            // Connect without namespace/database — don't touch USE until authenticated
+            await store.instance.connect(props.endpoint);
         },
     }));
-    const { mutateAsync, isError, error, reset } = mutation;
 
     // Auto-connect on mount, close on unmount
     createEffect(() => {
@@ -121,22 +121,24 @@ export function SurrealProvider(props: SurrealProviderProps) {
         });
     });
 
-    // Re-authenticate whenever the token prop changes
-    createEffect(() => {
-        const token = props.token;
-        if (token && store.status === "connected") {
-            store.instance.authenticate(token).catch(console.error);
-        }
-    });
-
     onMount(() => {
-        store.instance.subscribe("connected", () => {
-            setStore("status", "connected");
-            // Authenticate immediately if token is already available at connect time
+        store.instance.subscribe("connected", async () => {
+            // Don't setStore here yet — wait until fully auth'd
             if (props.token) {
-                store.instance.authenticate(props.token).catch(console.error);
+                try {
+                    await store.instance.authenticate(props.token);
+                    await store.instance.use({
+                        namespace: import.meta.env.VITE_SURREALDB_NS,
+                        database: import.meta.env.VITE_SURREALDB_DB,
+                    });
+                } catch (err) {
+                    console.error("[SurrealProvider] auth failed", err);
+                }
             }
+            // Only mark as connected AFTER auth + use complete
+            setStore("status", "connected");
         });
+
         store.instance.subscribe("disconnected", () => {
             setStore("status", "disconnected");
         });
@@ -198,53 +200,55 @@ export function useSurrealClient(): Accessor<Surreal> {
 }
 
 // ── useLiveQuery ────────────────────────────────────────────────────────────
-// Subscribes to a SurrealDB LIVE SELECT and returns a reactive signal.
-// Re-subscribes automatically when queryFn returns a different string.
-// Unsubscribes cleanly on component unmount.
+// Polls a SurrealDB query and returns a reactive signal.
+// This is a simplified implementation that polls at intervals.
+// For true WebSocket-based live queries, implement based on your SurrealDB SDK version.
 //
 // Usage:
 //   const threads = useLiveQuery<WorldThread>(
 //     () => `SELECT * FROM world_thread WHERE session_id = '${session.id}'`
 //   );
 
-// import { type Patch } from "surrealdb";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function useLiveQuery<T = any>(
+    queryFn: () => string,
+    initial: T[] = []
+): Accessor<T[]> {
+    const { client, isSuccess } = useSurreal();
+    const [results, setResults] = createSignal<T[]>(initial);
 
-// export function useLiveQuery<T extends Record<string, unknown> | Patch>(
-//     queryFn: () => string,
-//     initial: T[] = []
-// ): Accessor<T[]> {
-//     const { client, isSuccess } = useSurreal();
-//     const [results, setResults] = createSignal<T[]>(initial);
+    createEffect(() => {
+        if (!isSuccess()) return;
 
-//     createEffect(() => {
-//         if (!isSuccess()) return;
+        // Initial fetch
+        client()
+            .query<T[]>(queryFn())
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setResults(data as T[]);
+                }
+            })
+            .catch(console.error);
 
-//         let uuid: string | undefined;
+        // Poll every 2 seconds for updates
+        const intervalId = setInterval(() => {
+            client()
+                .query<T[]>(queryFn())
+                .then((data) => {
+                    if (Array.isArray(data)) {
+                        setResults(data as T[]);
+                    }
+                })
+                .catch(() => { });
+        }, 2000);
 
-//         client()
-//             .live<T>(queryFn(), (action, result) => {
-//                 if (action === "CLOSE") return;
-//                 if (action === "CREATE" || action === "UPDATE") {
-//                     setResults(prev => {
-//                         const idx = prev.findIndex((r: any) => r.id === (result as any).id);
-//                         return idx >= 0
-//                             ? prev.map((r, i) => (i === idx ? result : r))
-//                             : [...prev, result];
-//                     });
-//                 } else if (action === "DELETE") {
-//                     setResults(prev => prev.filter((r: any) => r.id !== (result as any).id));
-//                 }
-//             })
-//             .then(id => { uuid = id; })
-//             .catch(console.error);
+        onCleanup(() => {
+            clearInterval(intervalId);
+        });
+    });
 
-//         onCleanup(() => {
-//             if (uuid) client().kill(uuid).catch(() => { });
-//         });
-//     });
-
-//     return results;
-// }
+    return results;
+}
 
 // ── useQuery ────────────────────────────────────────────────────────────────
 // One-shot query that runs once the connection is ready and whenever

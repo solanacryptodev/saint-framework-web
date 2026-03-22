@@ -1,5 +1,6 @@
 import { For } from 'solid-js';
-import OperationCard, { type OperationCardProps } from './OperationCard';
+import OperationCard, { type OperationCardProps, type VectorDeltas } from './OperationCard';
+import type { NarrativeOption, TurnProgress } from '~/libs/types';
 import './MissionPanel.css';
 
 export interface ActiveThreat {
@@ -17,6 +18,9 @@ export interface MissionPanelProps {
     emphasisWords?: string[];
     activeThreat?: ActiveThreat;
     operations: OperationCardProps[];
+    // Turn loop integration
+    onOptionChosen?: (option: NarrativeOption) => void;
+    turnPhase?: TurnProgress['phase'] | null;
 }
 
 export default function MissionPanel(props: MissionPanelProps) {
@@ -34,6 +38,29 @@ export default function MissionPanel(props: MissionPanelProps) {
 
         return <span innerHTML={result} />;
     };
+
+    function handleOperationClick(operation: OperationCardProps) {
+        if (props.onOptionChosen && !props.turnPhase) {
+            props.onOptionChosen({
+                id: operation.id,
+                text: operation.title,
+                tone: (operation.tone as any) || 'cautious',
+                loreReferences: [],
+                worldImpact: {
+                    actorDeltas: {},
+                    locationDeltas: {},
+                    itemDeltas: {},
+                    newEdges: [],
+                    newThreads: [],
+                    consequenceSeeds: [],
+                    narrativePressure: 0,
+                },
+                weight: operation.weight ?? (operation.risk === 'LOW' ? 0.8 : operation.risk === 'MODERATE' ? 0.5 : 0.2),
+                consequence_preview: operation.consequencePreview,
+                vector_deltas: operation.vectorDeltas,
+            });
+        }
+    }
 
     return (
         <div class="mission-panel">
@@ -101,7 +128,13 @@ export default function MissionPanel(props: MissionPanelProps) {
             <div class="operations-section">
                 <div class="operations-grid">
                     <For each={props.operations}>
-                        {(operation) => <OperationCard {...operation} />}
+                        {(operation) => (
+                            <OperationCard
+                                {...operation}
+                                disabled={props.turnPhase !== null && props.turnPhase !== undefined}
+                                onClick={() => handleOperationClick(operation)}
+                            />
+                        )}
                     </For>
                 </div>
             </div>

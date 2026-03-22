@@ -42,7 +42,8 @@ import {
     writeThreadTool,
     writeEdgeTool,
     writeConceptTool,
-    writeEventTool
+    writeEventTool,
+    writeFactionTool
 } from "./tools";
 
 
@@ -54,39 +55,45 @@ export function buildWorldInitAgent(): Agent {
     return new Agent({
         id: "world-init-agent",
         name: "world-init-agent",
-        model: openrouter("minimax/minimax-m2.5"),
+        model: openrouter("minimax/minimax-m2.7"),
         instructions: `
 You are the World Initialization Agent for the ACE Narrative Engine.
 Your job is to take a completed Lore Graph and initialize the live World Graph —
 the starting simulation state that the player will enter.
 
-You have five tools:
-1. write_world_actor   — place each character/NPC in a starting location with goals
+You have eight tools:
+1. write_world_agent   — place each character/NPC with goals and disposition
 2. write_world_location — create each location with atmosphere + hidden secrets
-3. write_world_item    — place each item with its holder or location
-4. write_world_concept — create each concept with its properties
-5. write_world_event   — create each event with its properties
-6. write_world_thread  — open narrative threads from unresolved tensions
-7. write_world_edge    — wire entities together with spatial/relational edges
+3. write_world_faction — create each faction with leadership, members, and territory
+4. write_world_item    — place each item with its holder or location
+5. write_world_concept — create each concept with its properties
+6. write_world_event   — create each event with its properties
+7. write_world_thread  — open narrative threads from unresolved tensions
+8. write_world_edge    — wire entities together with spatial/relational edges
 
 STRICT RULES:
-- Write ALL locations FIRST (agents and items reference them)
-- Write ALL agents SECOND (items and edges reference them)
-- Write ALL events THIRD (they reference agents + locations)
-- Write ALL items FOURTH (they reference agents + locations)
-- Write ALL concepts FIFTH
-- Write ALL threads SIXTH (they reference agents + locations)
-- Write ALL edges LAST
+- You MUST build the world in verbatim based on the lore provided. Only add small details, don't erase/replace the lore.
+- Write ALL locations FIRST (agents, factions, and items reference them)
+- Write ALL agents SECOND (factions, items, and edges reference them)
+- Write ALL factions THIRD (edges reference them)
+- Write ALL events FOURTH (they reference agents + locations)
+- Write ALL items FIFTH (they reference agents + locations)
+- Write ALL concepts SIXTH
+- Write ALL threads SEVENTH (they reference agents + locations)
+- Write ALL edges LAST — including AT edges that wire every agent to their starting location
+
+IMPORTANT: Agent location is set via write_world_edge, NOT inside write_world_agent.
+After writing all agents, call write_world_edge with edge_type='AT' for every agent.
 
 WHAT TO DERIVE FOR EACH ENTITY TYPE:
 
 world_location:
-  - danger_level: 0.0 (The Archive lobby) → 1.0 (deep Underspire)
-  - accessible: false for locked/hidden locations the player can't reach yet
+  - traversal_risk: 0.0 (The Archive lobby) → 1.0 (deep Underspire) — previously called danger_level
+  - accessible: false for locked/hidden locations the player can't reach yet OR places that are hard to access without considerable effort
   - atmosphere: write a present-tense sensory sentence ("Dust and cold iron. The shelves go up forever.")
   - secrets: hidden facts from History & Secrets that belong to this location
 
-world_actor:
+world_agent:
   - kind="player" for the protagonist; everyone else is "npc" or "faction_rep"
   - disposition toward the player: hostile/neutral/friendly/unknown
   - awareness of the player: unaware/suspicious/alerted/hostile/allied
@@ -94,21 +101,20 @@ world_actor:
   - goal_hidden: their real agenda (the thing they'd never say aloud)
 
 world_item:
-  - accessible=true only if the player could plausibly pick it up at game start
-  - known_to_player=true only if the item is publicly known or the player owns it
-  - If an item is held by an NPC who is at a location, set both holder_actor AND location
+  - accessible=true ONLY if the player could plausibly pick it up at game start
+  - known_to_player=true ONLY if the item is publicly known or the player owns it
+  - If an item is held by an NPC, set held_by AND location_id
+  - Use VERBS to describe the item's CONDITION: "pristine", "damaged", "broken", "ancient", "cursed", "rugged", "tattered", "worn", etc.
+  - If the owner(holder) if an item is unknown, set the held_by to unknown, lost or hidden depending on the context of the lore.
+  - The KIND of item it is includes things like: artifacts, clothing, tools, relics, keys, documents, weapons, armor, etc.
 
 world_concept:
-  - kind: "lore" | "game" | "narrative"
-  - name: the concept name
   - description: a concise explanation of what this concept means in the game world
-  - properties: any relevant properties of the concept
+  - emotional_valence: -1.0 (dark/harmful) to 1.0 (hopeful/positive)
 
 world_event:
-  - kind: "lore" | "game" | "narrative"
-  - name: the event name
   - description: a concise explanation of what this event means in the game world
-  - properties: any relevant properties of the event
+  - significance: 0.0-1.0 narrative weight of this event
 
 world_thread:
   - One thread per major unresolved tension from History & Secrets
@@ -117,11 +123,16 @@ world_thread:
   - consequence_seeds: concrete things that happen if the player ignores this thread
 
 world_edge:
-  - AT: every agent at their starting location
+  - AT: every agent at their starting location (REQUIRED for every agent)
   - LEADS_TO (bidirectional): every traversable path between locations
   - HOLDS: agents who currently carry items
   - AWARE_OF: NPCs who know about other NPCs or items (with weight = how well they know)
   - GUARDS: agents or factions that block access to a location/item
+
+world_faction:
+  - FACTION_TYPE: unless specified otherwise, can be either guilds, corporations, government, criminal, religious, syndicates, movement, etc.
+  - STATUS: unless specified otherwise, can be either active, inactive, defunct, etc.
+  - Unless otherwise specified: leadership_id, member_id, and territory_id MUST be set to Unknown.
 
 Place the protagonist (kind="player") in a narratively interesting starting position —
 ideally where multiple threads intersect and multiple NPCs are nearby.
@@ -131,6 +142,7 @@ After writing everything, briefly summarize the starting world state.
         tools: {
             write_world_agent: writeAgentTool,
             write_world_location: writeLocationTool,
+            write_world_faction: writeFactionTool,
             write_world_item: writeItemTool,
             write_world_concept: writeConceptTool,
             write_world_event: writeEventTool,
@@ -188,10 +200,10 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
     onProgress?.({ phase: "world_init", message: "Collecting world graph results…", percent: 88 });
 
     // Collect results
-    const [agents] = await db.query<[WorldAgent[]]>(`SELECT id, name, kind, disposition, goal_current, location_id FROM world_agent`);
-    const [locations] = await db.query<[WorldLocation[]]>(`SELECT id, name, region, danger_level, accessible, secrets FROM world_location`);
-    const [items] = await db.query<[WorldItem[]]>(`SELECT id, name, holder_actor, location_id, known_to_player FROM world_item`);
-    const [concepts] = await db.query<[WorldConcept[]]>(`SELECT id, name, description, emotional_valence, narrative_weight FROM world_concept`);
+    const [agents] = await db.query<[WorldAgent[]]>(`SELECT id, name, kind, disposition, goal_current FROM world_agent`);
+    const [locations] = await db.query<[WorldLocation[]]>(`SELECT id, name, region, accessible, atmosphere, secrets FROM world_location`);
+    const [items] = await db.query<[WorldItem[]]>(`SELECT id, name, held_by, location_id, known_to_player FROM world_item`);
+    const [concepts] = await db.query<[WorldConcept[]]>(`SELECT id, name, description, emotional_valence, swarm_coherence FROM world_concept`);
     const [events] = await db.query<[WorldEvent[]]>(`SELECT id, name, description, participants, location_id FROM world_event`);
     const [threads] = await db.query<[WorldThread[]]>(`SELECT id, name, tension, urgency FROM world_thread WHERE session_id = 'WORLD_INIT'`);
     const [edges] = await db.query<[{ count: number }[]]>(`SELECT count() AS count FROM world_edge GROUP ALL`);
@@ -240,7 +252,7 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
             world_id: String(a.id),
             lore_name: a.name,
             kind: a.kind,
-            starting_location: locationMap[a.location_id] ?? "unknown",
+            starting_location: "see world_edge AT",
             disposition: a.disposition,
             goal_current: a.goal_current,
         })),
@@ -248,14 +260,14 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
             world_id: String(l.id),
             lore_name: l.name,
             region: l.region,
-            danger_level: l.danger_level,
+            danger_level: l.traversal_risk,
             accessible: l.accessible,
             secret_count: (l.secrets ?? []).length,
         })),
         itemsPlaced: (items ?? []).map(i => ({
             world_id: String(i.id),
             lore_name: i.name,
-            holder: i.holder_actor ? agentMap[i.holder_actor] : undefined,
+            holder: i.held_by ? agentMap[i.held_by] : undefined,
             location: i.location_id ? locationMap[i.location_id] : undefined,
             known_to_player: i.known_to_player,
         })),
@@ -281,7 +293,7 @@ After finishing all writes, summarize the starting world state in 2-3 sentences.
             urgency: t.urgency,
         })),
         edgesCreated: edges?.[0]?.count ?? 0,
-        playerStartLocation: playerAgent ? (locationMap[playerAgent.location_id] ?? "unknown") : "unplaced",
+        playerStartLocation: playerAgent ? "see world_edge AT" : "unplaced",
         warnings,
         summary: response.text,
         completedAt: new Date().toISOString(),
