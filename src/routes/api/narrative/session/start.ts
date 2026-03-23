@@ -24,6 +24,7 @@ import {
     resumeSession,
     getEngineFromCache,
 } from "~/libs/session-engine";
+import { getPlayerCharacterForGame } from "~/libs/player-character";
 import { Table } from "surrealdb";
 import { sanitizeGameId } from "~/libs/game";
 
@@ -100,6 +101,12 @@ async function handleNewSession(
     }
 
     if (!template) return json({ error: "No character template found for this game" }, { status: 400 });
+
+    // Check if player already has a character for this game
+    const existingCharacter = await getPlayerCharacterForGame(player.id, sanitizedGameId);
+    if (existingCharacter) {
+        return json({ error: "Player already has a character for this game" }, { status: 409 });
+    }
 
     // Create player_character record
     const [character] = await db.create(new Table("player_character")).content({

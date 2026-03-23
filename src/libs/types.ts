@@ -868,3 +868,50 @@ export interface Controls {
     infrastructure_quality: number; // 0.0-1.0 condition of controlled infrastructure
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ENGINE TYPES
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface TurnInput {
+    sessionId: string;
+    gameId: string;
+    playerId: string;
+    chosenOptionId: string;
+    chosenOptionText: string;
+    worldImpact: Record<string, unknown>;
+    turnNumber: number;
+}
+
+export interface TurnOutput {
+    beat: NarrativeBeat;
+    sceneDescription: string;
+    options: NarrativeOption[];
+    phaseState: NarrativePhaseState;
+    eternalRan: boolean;
+    toolCallCount: number;
+    durationMs: number;
+}
+
+export interface EngineConfig {
+    // Model selection
+    powerModel: string;
+    fastModel: string;
+    proseModel: string;
+
+    // Genre tone passed into Prose Agent
+    genreTone: "thriller" | "southern_gothic" | "science_fiction" | "fantasy" | "horror";
+
+    // Eternal threshold — only run when significance >= this value
+    eternalSignificanceThreshold: number;
+
+    // Max tool steps per agent
+    tremorMaxSteps: number;
+    eternalMaxSteps: number;
+    witnessMaxSteps: number;
+
+    // Phase thresholds (world-builder controlled)
+    phaseThresholds: Record<string, number>;
+
+    // Optional: NPC agents to run in parallel after Tremor
+    npcAgentIds?: string[];
+}
