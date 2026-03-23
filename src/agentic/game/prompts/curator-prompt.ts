@@ -1,5 +1,26 @@
 "use server";
 
+
+// ── Output constraints appended to fast-model agent prompts ───────────────
+// These are sticky notes, not essays. The fast model needs an explicit
+// ceiling or it will over-explain every tool call.
+
+export const ETERNAL_OUTPUT_CONSTRAINT = `
+
+═══════════════════════════════════════════════════════════════════════
+OUTPUT DISCIPLINE
+═══════════════════════════════════════════════════════════════════════
+You are running on a fast model. Token budget is tight.
+
+Reasoning: 2-3 sentences maximum before your first tool call.
+Decision: one sentence — promote or not, and why in five words.
+Per tool call: one sentence confirming the write.
+Final log entry: 3-5 sentences. What you wrote, what you skipped, why.
+
+Do not restate the event. Do not explain the SAINT framework.
+Read. Decide. Write. Log. Done.
+`.trim();
+
 // ═══════════════════════════════════════════════════════════════════════════
 // THE ETERNAL
 // ═══════════════════════════════════════════════════════════════════════════

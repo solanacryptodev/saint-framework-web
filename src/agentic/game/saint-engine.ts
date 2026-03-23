@@ -27,16 +27,23 @@ import type {
     NarrativePhaseState,
     TurnProgress,
 } from "../../libs/types";
-
 import {
     TREMOR_SYSTEM_PROMPT,
+    TREMOR_OUTPUT_CONSTRAINT,
 } from "../game/prompts/reflector-prompt";
 import {
     ETERNAL_SYSTEM_PROMPT,
+    ETERNAL_OUTPUT_CONSTRAINT,
 } from "../game/prompts/curator-prompt";
 import {
     WITNESS_SYSTEM_PROMPT,
 } from "../game/prompts/generator-prompt";
+import {
+    TurnInput,
+    TurnOutput,
+    EngineConfig,
+} from "../../libs/types";
+import { generateHeraldContext } from "./herald-agent";
 
 // ── Tool imports ───────────────────────────────────────────────────────────
 // Tremor tools
@@ -92,88 +99,6 @@ import {
 
 const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
 
-// ── Output constraints appended to fast-model agent prompts ───────────────
-// These are sticky notes, not essays. The fast model needs an explicit
-// ceiling or it will over-explain every tool call.
-
-const TREMOR_OUTPUT_CONSTRAINT = `
-
-═══════════════════════════════════════════════════════════════════════
-OUTPUT DISCIPLINE
-═══════════════════════════════════════════════════════════════════════
-You are running on a fast model. Token budget is tight.
-
-Before each tool call: one sentence stating what you are about to do.
-After each tool call: one sentence confirming what changed.
-Final summary: 3-5 sentences total. What changed, what was flagged, done.
-
-Do not explain your reasoning at length. Do not restate the input.
-Act. Confirm. Move on.
-`.trim();
-
-const ETERNAL_OUTPUT_CONSTRAINT = `
-
-═══════════════════════════════════════════════════════════════════════
-OUTPUT DISCIPLINE
-═══════════════════════════════════════════════════════════════════════
-You are running on a fast model. Token budget is tight.
-
-Reasoning: 2-3 sentences maximum before your first tool call.
-Decision: one sentence — promote or not, and why in five words.
-Per tool call: one sentence confirming the write.
-Final log entry: 3-5 sentences. What you wrote, what you skipped, why.
-
-Do not restate the event. Do not explain the SAINT framework.
-Read. Decide. Write. Log. Done.
-`.trim();
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════
-
-export interface TurnInput {
-    sessionId: string;
-    gameId: string;
-    playerId: string;
-    chosenOptionId: string;
-    chosenOptionText: string;
-    worldImpact: Record<string, unknown>;
-    turnNumber: number;
-}
-
-export interface TurnOutput {
-    beat: NarrativeBeat;
-    sceneDescription: string;
-    options: NarrativeOption[];
-    phaseState: NarrativePhaseState;
-    eternalRan: boolean;
-    toolCallCount: number;
-    durationMs: number;
-}
-
-export interface EngineConfig {
-    // Model selection
-    powerModel: string;
-    fastModel: string;
-    proseModel: string;
-
-    // Genre tone passed into Prose Agent
-    genreTone: "thriller" | "southern_gothic" | "science_fiction" | "fantasy" | "horror";
-
-    // Eternal threshold — only run when significance >= this value
-    eternalSignificanceThreshold: number;
-
-    // Max tool steps per agent
-    tremorMaxSteps: number;
-    eternalMaxSteps: number;
-    witnessMaxSteps: number;
-
-    // Phase thresholds (world-builder controlled)
-    phaseThresholds: Record<string, number>;
-
-    // Optional: NPC agents to run in parallel after Tremor
-    npcAgentIds?: string[];
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ENGINE BUILDER
@@ -311,6 +236,31 @@ export class SaintEngine {
             "...The die has been cast.",
             "...A new reality is taking shape.",
         ];
+
+        // ── STEP 0: HERALD (runs before everything, no other agent depends on it) ──
+        // The Herald speaks first — generates brief contextual text for the player to read
+        // while the other agents (Tremor, Eternal, Witness, Prose) run in the background
+        onProgress?.({ phase: "herald", message: "The Herald speaks..." });
+
+        let heraldText = "";
+        try {
+            const game = await getGame(input.gameId);
+            if (game) {
+                const heraldResult = await generateHeraldContext(
+                    game,
+                    input.sessionId,
+                    input.turnNumber,
+                    input.chosenOptionText || undefined
+                );
+                heraldText = heraldResult.heraldText;
+                console.log("[===Herald===] Herald text:", heraldText);
+                // Send herald text as a progress event so the client can start displaying it
+                onProgress?.({ phase: "herald", message: heraldText });
+            }
+        } catch (err) {
+            console.error("[===Herald===] Error generating herald context:", err);
+            // Herald failed — continue without herald text, other agents still run
+        }
 
         // ── STEP 1: TREMOR ────────────────────────────────────────────────
         // Tremor message varies based on world impact weight
@@ -454,6 +404,7 @@ export class SaintEngine {
         return {
             beat,
             sceneDescription: cleanSceneDescription,
+            heraldText,
             options,
             phaseState,
             eternalRan,

@@ -22,7 +22,6 @@ import AgentProfile, { type AgentProfileProps } from './AgentProfile';
 import MissionPanel, { type MissionPanelProps } from './MissionPanel';
 import SiteIntelligence, { type SiteIntelligenceProps } from './SiteIntelligence';
 import PlayerCreationModal from '../PlayerCreation/PlayerCreationModal';
-import TurnProgress from '../TurnProgress';
 import type {
     PlayerCharacterTemplate,
     PlayerCharacter,
@@ -75,11 +74,7 @@ const defaultMissionData: MissionPanelProps = {
     locationName: 'BLACK SITE OMEGA-7',
     phase: 'INFILTRATION',
     status: 'ACTIVE',
-    paragraphs: [
-        'The elevator descends past the official basement levels, through reinforced concrete and into bedrock. Your credentials—meticulously forged by the agency\'s best—got you past the lobby security, but down here, biometrics rule.',
-        'The facility hums with the white noise of server farms cooling systems. Somewhere in this labyrinth of classified projects and buried secrets lies the proof you need: evidence of Operation Nightfall, the black program they swore never existed.',
-        'A security terminal flickers at the corridor junction ahead. Its screen casts harsh light on the polished floor, and beyond it, a guard station manned by two armed operatives. They haven\'t seen you yet.',
-    ],
+    paragraphs: [],
     emphasisWords: ['biometrics rule', 'Operation Nightfall', 'armed operatives'],
     activeThreat: {
         name: 'Security Checkpoint Alpha',
@@ -140,6 +135,10 @@ export default function GeneralGame(props: GeneralGameProps) {
     const [turnPhase, setTurnPhase] = createSignal<TurnProgressType['phase'] | null>(null);
     const [turnMessage, setTurnMessage] = createSignal('');
 
+    // ── Herald Step 0 state ───────────────────────────────────────────────────
+    const [heraldText, setHeraldText] = createSignal<string | undefined>(undefined);
+    const [pendingProse, setPendingProse] = createSignal<string[]>([]);
+
     // ── Live queries (powered by SurrealProvider WS in play.tsx) ────────────
     // These update reactively as the Tremor mutates world state each turn.
     // They're scoped to the current session so each player sees only their world.
@@ -175,18 +174,23 @@ export default function GeneralGame(props: GeneralGameProps) {
                 setPlayerCharacter(data.existingCharacter);
 
                 if (data.existingCharacter.session_id === "PENDING") {
-                    // Character exists but session never started — treat as new
-                    await startNewSession(data.existingCharacter);
+                    // Character exists but session never started — 
+                    // Use SSE streaming to show progress immediately
+                    setLoading(false);  // Show UI immediately, then stream
+                    await startNewSessionWithStream(data.existingCharacter);
                 } else {
+                    setLoading(false);  // Show UI immediately
                     await resumeOrStartSession(data.existingCharacter);
                 }
             } else if (data.templates?.length) {
                 setTemplate(data.templates[0]);
                 // console.log('data.templates[0]', data.templates[0]);
                 setShowPlayerModal(true);
+                setLoading(false);  // Show character creation modal
             } else {
                 // No templates — show game with mock data until forge is complete
                 setSessionReady(false);
+                setLoading(false);  // Show game with mock data
             }
         } catch (err) {
             console.error('[GeneralGame] onMount', err);
@@ -215,32 +219,80 @@ export default function GeneralGame(props: GeneralGameProps) {
         setTurnNumber(data.turnNumber ?? 0);
         setScene(data.scene ?? '');
         setOptions(data.options ?? []);
+        if (data.heraldText) {
+            setHeraldText(data.heraldText);
+        }
         console.log("options in resumeOrStartSession", data.options);
         setSessionReady(true);
     }
 
     async function startNewSession(character: PlayerCharacter) {
-        const res = await fetch('/api/narrative/session/start', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-                mode: 'new',
-                gameId: props.gameId,
-                displayName: character.display_name,
-                chosenBackstory: character.chosen_backstory,
-                chosenTraits: character.chosen_traits,
-                chosenItems: character.chosen_items,
-            }),
-        });
-        const data = await res.json();
-        // console.log("session start", data);
-        setSessionId(data.sessionId);
-        setTurnNumber(0);
-        setScene(data.scene ?? '');
-        setOptions(data.options ?? []);
-        console.log("options in startNewSession", data.options);
-        setSessionReady(true);
+        // Use SSE streaming for new sessions too
+        await startNewSessionWithStream(character);
+    }
+
+    // ── SSE streaming version for new session ───────────────────────────────
+    async function startNewSessionWithStream(character: PlayerCharacter) {
+        setTurnPhase('herald');
+        setTurnMessage('The Herald speaks...');
+
+        try {
+            const response = await fetch('/api/narrative/session/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    mode: 'new',
+                    stream: true,
+                    gameId: props.gameId,
+                    playerCharacterId: character.id,
+                }),
+            });
+
+            const reader = response.body!.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const parts = buffer.split('\n\n');
+                buffer = parts.pop() ?? '';
+
+                for (const part of parts) {
+                    if (!part.startsWith('data: ')) continue;
+                    const event = JSON.parse(part.slice(6));
+
+                    if (event.type === 'progress') {
+                        // Capture herald text when it arrives
+                        if (event.phase === 'herald' && event.message && !event.message.startsWith('The Herald speaks')) {
+                            setHeraldText(event.message);
+                        }
+                        setTurnPhase(event.phase);
+                        setTurnMessage(event.message);
+                    } else if (event.type === 'complete') {
+                        if (event.heraldText) {
+                            setHeraldText(event.heraldText);
+                        }
+                        setSessionId(event.sessionId);
+                        setTurnNumber(event.turnNumber);
+                        setScene(event.scene ?? '');
+                        setOptions(event.options ?? []);
+                        setTurnPhase(null);
+                        setTurnMessage('');
+                        setSessionReady(true);
+                    } else if (event.type === 'error') {
+                        console.error('[startNewSession]', event.message);
+                        setTurnPhase(null);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('[startNewSessionWithStream]', err);
+            setTurnPhase(null);
+        }
     }
 
     // ── Character creation complete ──────────────────────────────────────────
@@ -315,9 +367,17 @@ export default function GeneralGame(props: GeneralGameProps) {
                     const event = JSON.parse(part.slice(6));
 
                     if (event.type === 'progress') {
+                        // Capture herald text when it arrives
+                        if (event.phase === 'herald' && event.message && !event.message.startsWith('The Herald speaks')) {
+                            setHeraldText(event.message);
+                        }
                         setTurnPhase(event.phase);
                         setTurnMessage(event.message);
                     } else if (event.type === 'complete') {
+                        // If herald text came in complete event, capture it
+                        if (event.heraldText) {
+                            setHeraldText(event.heraldText);
+                        }
                         setScene(event.scene);
                         setOptions(event.options ?? []);
                         setTurnNumber(event.turnNumber);
@@ -386,24 +446,31 @@ export default function GeneralGame(props: GeneralGameProps) {
                     </div>
                 )}
 
-                {/* Turn progress overlay */}
-                <Show when={turnPhase() !== null}>
-                    <TurnProgress phase={turnPhase()} message={turnMessage()} />
-                </Show>
-
-                {/* Main game layout */}
-                <Show when={turnPhase() === null}>
-                    <GameLayout
-                        agentPanel={<AgentProfile {...agentData()} />}
-                        missionPanel={
-                            <MissionPanel
-                                {...missionData()}
-                                onOptionChosen={sessionReady() ? handleOptionChosen : undefined}
-                            />
-                        }
-                        intelPanel={<SiteIntelligence {...intelData()} />}
-                    />
-                </Show>
+                {/* Main game layout - always shown to display herald text during streaming */}
+                <GameLayout
+                    agentPanel={<AgentProfile {...agentData()} />}
+                    missionPanel={
+                        <MissionPanel
+                            {...missionData()}
+                            onOptionChosen={sessionReady() ? handleOptionChosen : undefined}
+                            turnPhase={turnPhase()}
+                            turnMessage={turnMessage()}
+                            heraldText={heraldText()}
+                            pendingProse={pendingProse()}
+                            onRevealPendingProse={() => {
+                                const pending = pendingProse();
+                                if (pending.length > 0) {
+                                    // Prepend pending prose to current scene
+                                    const newScene = pending[0] + '\n\n' + scene();
+                                    setScene(newScene);
+                                    // Remove the first pending item
+                                    setPendingProse(pending.slice(1));
+                                }
+                            }}
+                        />
+                    }
+                    intelPanel={<SiteIntelligence {...intelData()} />}
+                />
 
                 {/* Character creation modal */}
                 <Show when={showPlayerModal() && template() !== null}>

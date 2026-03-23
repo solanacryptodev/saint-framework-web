@@ -1,5 +1,24 @@
 "use server";
 
+// ── Output constraints appended to fast-model agent prompts ───────────────
+// These are sticky notes, not essays. The fast model needs an explicit
+// ceiling or it will over-explain every tool call.
+
+export const TREMOR_OUTPUT_CONSTRAINT = `
+
+═══════════════════════════════════════════════════════════════════════
+OUTPUT DISCIPLINE
+═══════════════════════════════════════════════════════════════════════
+You are running on a fast model. Token budget is tight.
+
+Before each tool call: one sentence stating what you are about to do.
+After each tool call: one sentence confirming what changed.
+Final summary: 3-5 sentences total. What changed, what was flagged, done.
+
+Do not explain your reasoning at length. Do not restate the input.
+Act. Confirm. Move on.
+`.trim();
+
 // ═══════════════════════════════════════════════════════════════════════════
 // THE TREMOR
 // ═══════════════════════════════════════════════════════════════════════════

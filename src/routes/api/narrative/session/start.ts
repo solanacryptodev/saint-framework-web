@@ -24,6 +24,7 @@ import {
     resumeSession,
     getEngineFromCache,
 } from "~/libs/session-engine";
+import { getPlayerCharacterForGame } from "~/libs/player-character";
 import { Table } from "surrealdb";
 import { sanitizeGameId } from "~/libs/game";
 
@@ -62,15 +63,15 @@ export async function POST({ request }: { request: Request }) {
 // ── Mode: new ──────────────────────────────────────────────────────────────
 // New player entering a game for the first time.
 // Creates player_character record, starts session, returns sessionId + turn 0.
+// Supports SSE streaming when stream=true is passed in the body.
 
 async function handleNewSession(
     player: { id: string },
     body: Record<string, any>
 ) {
-    const { gameId, displayName, chosenBackstory, chosenTraits, chosenItems } = body;
+    const { gameId, displayName, chosenBackstory, chosenTraits, chosenItems, playerCharacterId, stream } = body;
 
     if (!gameId) return json({ error: "gameId required" }, { status: 400 });
-    if (!displayName) return json({ error: "displayName required" }, { status: 400 });
 
     const sanitizedGameId = sanitizeGameId(body.gameId);
 
@@ -80,41 +81,71 @@ async function handleNewSession(
 
     const db = await getDB();
 
-    // Load character template (accept templateId from body for multi-template selection)
-    const templateId = body.templateId;
-    let template: any = null;
-
-    if (templateId) {
-        const [templateRows] = await db.query<[any[]]>(
-            `SELECT * FROM player_character_template WHERE id = $tid LIMIT 1`,
-            { tid: templateId }
+    // If playerCharacterId is provided, use the existing character instead of creating new
+    let character: any = null;
+    console.log("playerCharacterId", playerCharacterId);
+    console.log("player.id", player.id);
+    if (playerCharacterId) {
+        // Use type::thing() to properly resolve the record ID
+        const cid = playerCharacterId.includes(':') ? playerCharacterId.split(':')[1] : playerCharacterId;
+        const [charRows] = await db.query<[any[]]>(
+            `SELECT * FROM type::thing('player_character', $cid) WHERE player_id = $pid LIMIT 1`,
+            { cid, pid: player.id }
         );
-        template = templateRows?.[0];
+        character = charRows?.[0];
+        if (!character) return json({ error: "Character not found" }, { status: 404 });
+
+        // If character already has an active session, return error
+        if (character.session_id && character.session_id !== "PENDING") {
+            return json({ error: "Character already has an active session" }, { status: 409 });
+        }
     } else {
-        // Fallback: get first published template
-        const [templateRows] = await db.query<[any[]]>(
-            `SELECT * FROM player_character_template WHERE game_id = $gid AND status = 'published' LIMIT 1`,
-            { gid: sanitizedGameId }
-        );
-        template = templateRows?.[0];
+        // No playerCharacterId - need displayName for new character
+        if (!displayName) return json({ error: "displayName required" }, { status: 400 });
+
+        // Load character template (accept templateId from body for multi-template selection)
+        const templateId = body.templateId;
+        let template: any = null;
+
+        if (templateId) {
+            const [templateRows] = await db.query<[any[]]>(
+                `SELECT * FROM player_character_template WHERE id = $tid LIMIT 1`,
+                { tid: templateId }
+            );
+            template = templateRows?.[0];
+        } else {
+            // Fallback: get first published template
+            const [templateRows] = await db.query<[any[]]>(
+                `SELECT * FROM player_character_template WHERE game_id = $gid AND status = 'published' LIMIT 1`,
+                { gid: sanitizedGameId }
+            );
+            template = templateRows?.[0];
+        }
+
+        if (!template) return json({ error: "No character template found for this game" }, { status: 400 });
+
+        // Check if player already has a character for this game
+        const existingCharacter = await getPlayerCharacterForGame(player.id, sanitizedGameId);
+        if (existingCharacter) {
+            return json({ error: "Player already has a character for this game" }, { status: 409 });
+        }
+
+        // Create player_character record
+        const [newChar] = await db.create(new Table("player_character")).content({
+            game_id: sanitizedGameId,
+            player_id: player.id,
+            session_id: "PENDING",
+            template_id: template ? String(template.id) : undefined,
+            kind: template?.kind ?? "template",
+            display_name: displayName,
+            chosen_backstory: chosenBackstory ?? undefined,
+            chosen_traits: chosenTraits ?? [],
+            chosen_items: chosenItems ?? [],
+            portrait_url: undefined,
+            world_actor_id: undefined,
+        });
+        character = newChar;
     }
-
-    if (!template) return json({ error: "No character template found for this game" }, { status: 400 });
-
-    // Create player_character record
-    const [character] = await db.create(new Table("player_character")).content({
-        game_id: sanitizedGameId,
-        player_id: player.id,
-        session_id: "PENDING",       // updated after session is created
-        template_id: template ? String(template.id) : undefined,  // now optional
-        kind: template?.kind ?? "template",  // inherit from template or default to "template"
-        display_name: displayName,
-        chosen_backstory: chosenBackstory ?? undefined,
-        chosen_traits: chosenTraits ?? [],
-        chosen_items: chosenItems ?? [],
-        portrait_url: undefined,
-        world_actor_id: undefined,
-    });
 
     // Start the session — this is where session-engine meets saint-engine
     const { session, engine } = await startSession(
@@ -142,6 +173,78 @@ async function handleNewSession(
         );
     }
 
+    // ── SSE Streaming Mode ─────────────────────────────────────────────────
+    if (stream === true) {
+        const encoder = new TextEncoder();
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                // Helper to send SSE event with type included in data payload
+                const sendEvent = (type: string, data: any) => {
+                    const payload = `data: ${JSON.stringify({ type, ...data })}\n\n`;
+                    controller.enqueue(encoder.encode(payload));
+                };
+
+                try {
+                    // Run turn 0 with progress callbacks
+                    const output = await engine.runTurn(
+                        {
+                            sessionId: session.sessionId,
+                            gameId,
+                            playerId: player.id,
+                            chosenOptionId: "",
+                            chosenOptionText: "",
+                            worldImpact: {},
+                            turnNumber: 0,
+                        },
+                        // onProgress fires at each agent transition with narrative messages
+                        (progress) => sendEvent("progress", { phase: progress.phase, message: progress.message })
+                    );
+
+                    // Update session turn_number in DB
+                    const db = await getDB();
+                    await db.query(
+                        `UPDATE game_session
+                         SET turn_number    = $tn,
+                             last_active_at = time::now()
+                         WHERE session_id   = $sid`,
+                        { tn: output.beat.turnNumber, sid: session.sessionId }
+                    );
+
+                    // Send completion event with full result
+                    sendEvent("complete", {
+                        mode: "new",
+                        sessionId: session.sessionId,
+                        characterId: String(character.id),
+                        scene: output.sceneDescription,
+                        heraldText: output.heraldText,
+                        options: output.options,
+                        phaseState: output.phaseState,
+                        eternalRan: output.eternalRan,
+                        turnNumber: 0,
+                    });
+
+                } catch (err) {
+                    console.error("[Session/new/stream]", err);
+                    sendEvent("error", {
+                        message: err instanceof Error ? err.message : "Session creation failed",
+                    });
+                } finally {
+                    controller.close();
+                }
+            },
+        });
+
+        return new Response(stream, {
+            headers: {
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            },
+        });
+    }
+
+    // ── Non-streaming Mode (legacy) ────────────────────────────────────────
     // Run turn 0 — the opening scene, no player choice yet
     const turn0Output = await engine.runTurn({
         sessionId: session.sessionId,
@@ -162,6 +265,7 @@ async function handleNewSession(
         phaseState: turn0Output.phaseState,
         eternalRan: turn0Output.eternalRan,
         turnNumber: 0,
+        heraldText: turn0Output.heraldText,
     });
 }
 
@@ -324,6 +428,7 @@ async function handleTurn(
                         mode: "turn",
                         sessionId,
                         scene: output.sceneDescription,
+                        heraldText: output.heraldText,
                         options: output.options,
                         phaseState: output.phaseState,
                         eternalRan: output.eternalRan,
