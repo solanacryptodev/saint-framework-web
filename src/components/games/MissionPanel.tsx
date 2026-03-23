@@ -1,6 +1,7 @@
-import { For } from 'solid-js';
+import { For, createSignal, createEffect, Show, onCleanup } from 'solid-js';
 import OperationCard, { type OperationCardProps, type VectorDeltas } from './OperationCard';
-import type { NarrativeOption, TurnProgress } from '~/libs/types';
+import type { NarrativeOption, TurnProgress as TurnProgressType } from '~/libs/types';
+import TurnProgress from '../TurnProgress';
 import './MissionPanel.css';
 
 export interface ActiveThreat {
@@ -20,10 +21,189 @@ export interface MissionPanelProps {
     operations: OperationCardProps[];
     // Turn loop integration
     onOptionChosen?: (option: NarrativeOption) => void;
-    turnPhase?: TurnProgress['phase'] | null;
+    turnPhase?: TurnProgressType['phase'] | null;
+    turnMessage?: string;
+    // Herald Step 0 integration
+    heraldText?: string;
+    pendingProse?: string[];
+    onRevealPendingProse?: () => void;
+    // Prose animation speed (ms per character)
+    proseSpeed?: number;
 }
 
 export default function MissionPanel(props: MissionPanelProps) {
+    // Herald text typewriter animation state
+    const [displayedHeraldText, setDisplayedHeraldText] = createSignal("");
+    const [heraldComplete, setHeraldComplete] = createSignal(false);
+    let heraldTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let heraldCharIndex = 0;
+
+    // Prose typewriter animation state
+    const [displayedParagraphs, setDisplayedParagraphs] = createSignal<string[]>([]);
+    const [currentParagraphIndex, setCurrentParagraphIndex] = createSignal(0);
+    const [proseComplete, setProseComplete] = createSignal(false);
+    const [proseSkipped, setProseSkipped] = createSignal(false);
+    const [showProseContinue, setShowProseContinue] = createSignal(false);
+    let proseTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let proseCharIndex = 0;
+
+    const proseSpeed = () => props.proseSpeed ?? 18;
+
+    // Effect to handle herald text typewriter animation
+    createEffect(() => {
+        const heraldText = props.heraldText;
+
+        // Clear previous animation
+        if (heraldTimeoutId) {
+            clearTimeout(heraldTimeoutId);
+            heraldTimeoutId = null;
+        }
+
+        // Reset state when new herald text arrives
+        if (heraldText) {
+            setDisplayedHeraldText("");
+            setHeraldComplete(false);
+            heraldCharIndex = 0;
+
+            // Start typewriter animation after a brief delay
+            heraldTimeoutId = setTimeout(() => {
+                typeNextHeraldChar(heraldText);
+            }, 300);
+        }
+    });
+
+    // Effect to handle prose typewriter animation
+    createEffect(() => {
+        const paragraphs = props.paragraphs;
+
+        // Clear previous animation
+        if (proseTimeoutId) {
+            clearTimeout(proseTimeoutId);
+            proseTimeoutId = null;
+        }
+
+        // Reset and start animation when paragraphs change
+        if (paragraphs && paragraphs.length > 0) {
+            setDisplayedParagraphs([]);
+            setCurrentParagraphIndex(0);
+            setProseComplete(false);
+            setProseSkipped(false);
+            setShowProseContinue(false);
+            proseCharIndex = 0;
+
+            // Start typing after a brief delay (wait for herald to finish if present)
+            const startDelay = props.heraldText ? 800 : 300;
+            proseTimeoutId = setTimeout(() => {
+                typeNextProseChar();
+            }, startDelay);
+        }
+    });
+
+    function typeNextHeraldChar(fullText: string) {
+        if (heraldCharIndex < fullText.length) {
+            setDisplayedHeraldText(fullText.slice(0, heraldCharIndex + 1));
+            heraldCharIndex++;
+            heraldTimeoutId = setTimeout(() => typeNextHeraldChar(fullText), 35);
+        } else {
+            setHeraldComplete(true);
+        }
+    }
+
+    function typeNextProseChar() {
+        const paragraphs = props.paragraphs;
+        const paragraphIndex = currentParagraphIndex();
+
+        if (paragraphIndex >= paragraphs.length) {
+            // All paragraphs typed
+            setProseComplete(true);
+            setShowProseContinue(true);
+            return;
+        }
+
+        const currentParagraph = paragraphs[paragraphIndex];
+
+        if (proseCharIndex < currentParagraph.length) {
+            // Type next character in current paragraph
+            const newDisplayed = [...displayedParagraphs()];
+            // Ensure array is long enough
+            while (newDisplayed.length <= paragraphIndex) {
+                newDisplayed.push("");
+            }
+            newDisplayed[paragraphIndex] = currentParagraph.slice(0, proseCharIndex + 1);
+            setDisplayedParagraphs(newDisplayed);
+            proseCharIndex++;
+            proseTimeoutId = setTimeout(typeNextProseChar, proseSpeed());
+        } else {
+            // Current paragraph complete, move to next
+            const newDisplayed = [...displayedParagraphs()];
+            while (newDisplayed.length <= paragraphIndex) {
+                newDisplayed.push("");
+            }
+            newDisplayed[paragraphIndex] = currentParagraph;
+            setDisplayedParagraphs(newDisplayed);
+
+            proseCharIndex = 0;
+            setCurrentParagraphIndex(paragraphIndex + 1);
+
+            // Small pause before starting next paragraph
+            if (paragraphIndex + 1 < paragraphs.length) {
+                proseTimeoutId = setTimeout(typeNextProseChar, 150);
+            } else {
+                // All paragraphs typed
+                setProseComplete(true);
+                setShowProseContinue(true);
+            }
+        }
+    }
+
+    function skipProseAnimation() {
+        if (proseTimeoutId) {
+            clearTimeout(proseTimeoutId);
+            proseTimeoutId = null;
+        }
+        // Show all paragraphs in full
+        setDisplayedParagraphs([...props.paragraphs]);
+        setCurrentParagraphIndex(props.paragraphs.length);
+        setProseSkipped(true);
+        setProseComplete(true);
+        setShowProseContinue(true);
+    }
+
+    function handleProseContinue() {
+        setShowProseContinue(false);
+        setProseComplete(true);
+    }
+
+    // Keyboard handler for prose continue
+    function handleKeyDown(e: KeyboardEvent) {
+        if (showProseContinue()) {
+            handleProseContinue();
+        } else if (!proseComplete()) {
+            skipProseAnimation();
+        }
+    }
+
+    // Clean up on unmount
+    onCleanup(() => {
+        if (heraldTimeoutId) {
+            clearTimeout(heraldTimeoutId);
+        }
+        if (proseTimeoutId) {
+            clearTimeout(proseTimeoutId);
+        }
+    });
+
+    // Check if there's pending prose to reveal
+    const hasPendingProse = () => (props.pendingProse?.length ?? 0) > 0;
+    const pendingCount = () => props.pendingProse?.length ?? 0;
+
+    // Handle clicking on the waiting status
+    function handleWaitingClick() {
+        if (hasPendingProse() && props.onRevealPendingProse) {
+            props.onRevealPendingProse();
+        }
+    }
+
     // Function to highlight emphasis words in text
     const renderParagraph = (text: string) => {
         if (!props.emphasisWords || props.emphasisWords.length === 0) {
@@ -75,22 +255,66 @@ export default function MissionPanel(props: MissionPanelProps) {
                 <div class="mission-status">
                     <span class="phase">PHASE: {props.phase}</span>
                     <span class="status-divider">|</span>
-                    <span class="status">STATUS: {props.status}</span>
+                    <Show when={hasPendingProse()}>
+                        <span
+                            class="status status-waiting"
+                            onClick={handleWaitingClick}
+                            title={`${pendingCount()} scene(s) waiting - click to reveal`}
+                        >
+                            STATUS: WAITING...
+                        </span>
+                    </Show>
+                    <Show when={!hasPendingProse()}>
+                        <span class="status">STATUS: {props.status}</span>
+                    </Show>
                 </div>
             </div>
 
-            {/* Narrative Content */}
-            <div class="mission-content">
+            {/* Herald Text Container - Dark Gold Glassmorphic Box */}
+            <Show when={displayedHeraldText()}>
+                <div class="herald-text-container">
+                    <p class="herald-text">{displayedHeraldText()}</p>
+                    <Show when={!heraldComplete()}>
+                        <span class="herald-cursor">▌</span>
+                    </Show>
+                </div>
+            </Show>
+
+            {/* Narrative Content with Typewriter Animation */}
+            <div class="mission-content" onClick={() => {
+                if (showProseContinue()) {
+                    handleProseContinue();
+                } else if (!proseComplete()) {
+                    skipProseAnimation();
+                }
+            }}>
                 <div class="narrative-scroll">
-                    <For each={props.paragraphs}>
-                        {(paragraph) => (
+                    <For each={displayedParagraphs()}>
+                        {(paragraph, index) => (
                             <p class="narrative-paragraph">
                                 {renderParagraph(paragraph)}
+                                {/* Show cursor on last paragraph while typing */}
+                                <Show when={index() === currentParagraphIndex() - 1 && !proseComplete()}>
+                                    <span class="prose-cursor">▌</span>
+                                </Show>
                             </p>
                         )}
                     </For>
+                    {/* Continue prompt */}
+                    <Show when={showProseContinue()}>
+                        <div class="prose-continue">
+                            {proseSkipped() ? "CONTINUE" : "PRESS ANY KEY"}
+                        </div>
+                    </Show>
                 </div>
             </div>
+
+            {/* Turn Progress - Inline above Active Threat */}
+            <Show when={props.turnPhase !== null && props.turnPhase !== undefined}>
+                <div class="turn-progress-container">
+                    <TurnProgress phase={props.turnPhase!} message={props.turnMessage ?? ''} />
+                </div>
+            </Show>
 
             {/* Active Threat Section */}
             {props.activeThreat && (

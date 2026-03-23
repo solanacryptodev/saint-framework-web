@@ -15,6 +15,7 @@ interface Props {
 }
 
 const AGENT_LABELS: Partial<Record<TurnProgressType["phase"], string>> = {
+    herald: "the herald",
     tremor: "the tremor",
     eternal: "the eternal",
     witness: "the witness",

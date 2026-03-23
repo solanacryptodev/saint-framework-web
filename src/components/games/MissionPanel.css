@@ -264,3 +264,149 @@
         min-width: 80px;
     }
 }
+
+/* Herald Text Container - Dark Gold Glassmorphic Box */
+.herald-text-container {
+    background: rgba(139, 90, 43, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(218, 165, 32, 0.3);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 1rem 1.5rem;
+    box-shadow:
+        0 0 20px rgba(218, 165, 32, 0.15),
+        inset 0 0 15px rgba(218, 165, 32, 0.05);
+    animation: herald-fade-in 0.5s ease-out;
+}
+
+.herald-text {
+    font-family: 'Tomorrow', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255, 235, 180, 0.95);
+    text-shadow: 0 0 10px rgba(218, 165, 32, 0.3);
+    margin: 0;
+    padding-right: 0.5rem;
+}
+
+.herald-cursor {
+    animation: cursor-blink 0.8s infinite;
+    color: rgba(218, 165, 32, 0.8);
+}
+
+@keyframes herald-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes cursor-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Status Waiting - Blinking Indicator */
+.status-waiting {
+    color: #f59e0b;
+    animation: status-pulse-glow 1.5s ease-in-out infinite;
+    cursor: pointer;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.status-waiting:hover {
+    color: #fbbf24;
+    text-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+}
+
+@keyframes status-pulse-glow {
+
+    0%,
+    100% {
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        opacity: 1;
+    }
+
+    50% {
+        text-shadow: 0 0 20px rgba(245, 158, 11, 0.9);
+        opacity: 0.7;
+    }
+}
+
+/* Prose Cursor - Blinking cursor during typing */
+.prose-cursor {
+    animation: prose-cursor-blink 0.8s infinite;
+    color: rgba(255, 235, 180, 0.8);
+    font-weight: 100;
+}
+
+@keyframes prose-cursor-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Prose Continue Prompt */
+.prose-continue {
+    text-align: center;
+    padding: 1rem 0 0.5rem;
+    font-family: 'Goldman', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: rgba(218, 165, 32, 0.9);
+    text-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+    animation: prose-continue-pulse 1.5s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.prose-continue:hover {
+    color: rgba(255, 200, 60, 1);
+    text-shadow: 0 0 15px rgba(255, 190, 40, 0.8);
+}
+
+@keyframes prose-continue-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: translateY(2px);
+    }
+}
+
+/* Mission Content Clickable Area */
+.mission-content {
+    cursor: pointer;
+}
+
+/* Turn Progress Container - Inline above Active Threat with black background */
+.turn-progress-container {
+    background: #000;
+    padding: 1rem 1.5rem;
+    margin: 0 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}

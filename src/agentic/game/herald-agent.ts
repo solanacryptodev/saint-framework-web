@@ -110,6 +110,13 @@ export interface HeraldClosingResult {
     monologue: string;
 }
 
+// ── Herald Context Result ───────────────────────────────────────────────────
+// Lightweight result for Herald Step 0 during turn-to-turn gameplay
+
+export interface HeraldContextResult {
+    heraldText: string;
+}
+
 /**
  * Generates the intro monologue shown before character creation.
  * Also returns the character creation template from the player_character_template table.
@@ -210,5 +217,89 @@ End with either:
 
     return {
         monologue: result.text.trim(),
+    };
+}
+
+/**
+ * Generates brief contextual text from the Herald for Step 0 of each turn.
+ * This runs BEFORE the Tremor and is purely for display — no other agent
+ * depends on its output.
+ * 
+ * Unlike generateHeraldIntro (for onboarding), this reads the current game state
+ * to write a brief scene-setting line that contextualizes what's happening.
+ */
+export async function generateHeraldContext(
+    game: GameRecord,
+    sessionId: string,
+    turnNumber: number,
+    previousChoice?: string
+): Promise<HeraldContextResult> {
+    const tone = resolveGenreTone(game.genre);
+    const herald = buildHeraldAgent(tone);
+    const db = await getDB();
+
+    // Build context from current game state
+    const [events] = await db.query<[any[]]>(
+        `SELECT * FROM world_event 
+         WHERE session_id = $sid AND resolved = false 
+         ORDER BY significance DESC LIMIT 5`,
+        { sid: sessionId }
+    );
+
+    const [threads] = await db.query<[any[]]>(
+        `SELECT * FROM world_thread 
+         WHERE session_id = $sid AND active = true 
+         ORDER BY tension DESC LIMIT 5`,
+        { sid: sessionId }
+    );
+
+    const [narrativeState] = await db.query<[any[]]>(
+        `SELECT * FROM narrative_state WHERE session_id = $sid LIMIT 1`,
+        { sid: sessionId }
+    );
+
+    const [playerSession] = await db.query<[any[]]>(
+        `SELECT * FROM player_session WHERE session_id = $sid LIMIT 1`,
+        { sid: sessionId }
+    );
+
+    // Build context summary
+    const activeEvents = events?.map(e => e.name).join(", ") || "nothing significant";
+    const activeThreads = threads?.map(t => t.name).join(", ") || "no open threads";
+    const phase = narrativeState?.[0]?.current_phase || "ordinary_world";
+    const phaseCharge = narrativeState?.[0]?.phase_charge || 0;
+
+    // Player state
+    const playerState = playerSession?.[0]
+        ? `Moral stance: ${playerSession[0].moral_polarity?.toFixed(2) || 0}, Approach: ${playerSession[0].method_intensity?.toFixed(2) || 0}`
+        : "unknown";
+
+    const result = await herald.generate([
+        {
+            role: "user",
+            content: `
+Write a contextual introduction that sets the tone for this moment in the story. Do not make it too long, 5-8 sentences max.
+
+GAME: ${game.name}
+TURN: ${turnNumber}
+
+CURRENT NARRATIVE PHASE: ${phase}
+PHASE PROGRESS: ${(phaseCharge * 100).toFixed(0)}% through this phase
+
+ACTIVE EVENTS: ${activeEvents}
+OPEN THREADS: ${activeThreads}
+
+PLAYER STATE: ${playerState}
+${previousChoice ? `THE PLAYER JUST CHOSE: "${previousChoice}"` : ""}
+
+Set the tone for the next scene. Do not make it too long, 5-8 sentences max. Don't ask "what is your name?" or any other
+character related questions. Stick purely to setting the scene and preparing the player for the journey they're about to
+embark on. 
+            `.trim(),
+        },
+    ]);
+
+    return {
+        heraldText: result.text.trim(),
     };
 }

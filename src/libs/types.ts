@@ -791,8 +791,15 @@ export interface NarrativePhaseState {
 // Sent during turn processing to show which SAINT agent is running
 
 export interface TurnProgress {
-    phase: "tremor" | "eternal" | "witness" | "prose" | "complete";
+    phase: "herald" | "tremor" | "eternal" | "witness" | "prose" | "complete";
     message: string;
+}
+
+// ── Herald Beat ───────────────────────────────────────────────────────────
+// Herald Step 0 output - brief contextual text shown before the scene
+
+export interface HeraldBeat {
+    heraldText: string;
 }
 
 // ── Typed relation interfaces ──────────────────────────────────────────────
@@ -885,6 +892,7 @@ export interface TurnInput {
 export interface TurnOutput {
     beat: NarrativeBeat;
     sceneDescription: string;
+    heraldText?: string;  // Herald Step 0 output - brief contextual text
     options: NarrativeOption[];
     phaseState: NarrativePhaseState;
     eternalRan: boolean;

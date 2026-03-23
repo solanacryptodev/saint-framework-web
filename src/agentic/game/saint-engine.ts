@@ -43,6 +43,7 @@ import {
     TurnOutput,
     EngineConfig,
 } from "../../libs/types";
+import { generateHeraldContext } from "./herald-agent";
 
 // ── Tool imports ───────────────────────────────────────────────────────────
 // Tremor tools
@@ -236,6 +237,31 @@ export class SaintEngine {
             "...A new reality is taking shape.",
         ];
 
+        // ── STEP 0: HERALD (runs before everything, no other agent depends on it) ──
+        // The Herald speaks first — generates brief contextual text for the player to read
+        // while the other agents (Tremor, Eternal, Witness, Prose) run in the background
+        onProgress?.({ phase: "herald", message: "The Herald speaks..." });
+
+        let heraldText = "";
+        try {
+            const game = await getGame(input.gameId);
+            if (game) {
+                const heraldResult = await generateHeraldContext(
+                    game,
+                    input.sessionId,
+                    input.turnNumber,
+                    input.chosenOptionText || undefined
+                );
+                heraldText = heraldResult.heraldText;
+                console.log("[===Herald===] Herald text:", heraldText);
+                // Send herald text as a progress event so the client can start displaying it
+                onProgress?.({ phase: "herald", message: heraldText });
+            }
+        } catch (err) {
+            console.error("[===Herald===] Error generating herald context:", err);
+            // Herald failed — continue without herald text, other agents still run
+        }
+
         // ── STEP 1: TREMOR ────────────────────────────────────────────────
         // Tremor message varies based on world impact weight
         const worldImpact = input.worldImpact as { vectorDeltas?: { moral_stance?: number; approach?: number } };
@@ -378,6 +404,7 @@ export class SaintEngine {
         return {
             beat,
             sceneDescription: cleanSceneDescription,
+            heraldText,
             options,
             phaseState,
             eternalRan,
