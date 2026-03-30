@@ -167,6 +167,14 @@ export default function GeneralGame(props: GeneralGameProps) {
             const res = await fetch(`/api/games/${cleanGameId}/character`, {
                 credentials: 'include',
             });
+
+            // 401 means the auth cookie is missing or expired — don't show modal
+            if (res.status === 401) {
+                console.warn('[GeneralGame] Not authenticated — redirecting to sign in');
+                window.location.href = '/';
+                return;
+            }
+
             const data = await res.json();
             console.log("data", data);
 
@@ -249,6 +257,20 @@ export default function GeneralGame(props: GeneralGameProps) {
                 }),
             });
 
+            // Handle auth failure — redirect rather than silently failing
+            if (response.status === 401) {
+                console.warn('[GeneralGame] startNewSessionWithStream: Not authenticated');
+                window.location.href = '/';
+                return;
+            }
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                console.error('[GeneralGame] startNewSessionWithStream failed:', response.status, errData);
+                setTurnPhase(null);
+                setTurnMessage('');
+                return;
+            }
+
             const reader = response.body!.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
@@ -313,9 +335,19 @@ export default function GeneralGame(props: GeneralGameProps) {
                 chosenItems: choices.chosenItems,
             }),
         });
-        const data = await res.json();
-        if (data.error) { console.error(data.error); return; }
 
+        // Handle auth failure — redirect rather than silently failing
+        if (res.status === 401) {
+            console.warn('[GeneralGame] handleCharacterCreated: Not authenticated');
+            window.location.href = '/';
+            return;
+        }
+
+        const data = await res.json();
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
         const character = data.playerCharacter;  // real DB record with proper IDs
         setPlayerCharacter(character);
         setShowPlayerModal(false);

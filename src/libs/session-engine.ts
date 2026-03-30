@@ -17,6 +17,8 @@
 import { getDB } from "./surreal";
 import { getGame } from "./game";
 import { SaintEngine } from "../agentic/game/saint-engine";
+import type { AgenticAgent, NpcBatchResult } from "../agentic/game/chain";
+import { PriorityMergeFanIn, ConcatenatedFanIn } from "../agentic/game/chain";
 import type { GameSession, GameRecord } from "./types";
 import { Table } from "surrealdb";
 
@@ -157,14 +159,258 @@ function resolveEternalThreshold(tone: GenreTone): number {
 }
 
 // ── Engine builder ─────────────────────────────────────────────────────────
-// Maps game record fields → fully configured ACEEngine instance.
+// Maps game record fields → fully configured SaintEngine instance.
 // This is the only place where game metadata touches the engine config.
 
-export function buildEngineForGame(game: GameRecord): SaintEngine {
+export async function buildEngineForGame(game: GameRecord): Promise<SaintEngine> {
     const tone = resolveGenreTone(game.genre);
     const models = resolveModels(game.cost_tier);
     const thresholds = resolvePhaseThresholds(tone);
     const eternal = resolveEternalThreshold(tone);
+
+    // ── Prompt builders (extracted from former saint-engine.ts) ───────────
+
+    function buildTremorPrompt(input: import("../libs/types").TurnInput): string {
+        return `
+SESSION: ${input.sessionId}
+TURN: ${input.turnNumber}
+PLAYER CHOSE: "${(input as any).chosenOptionText}"
+WORLD IMPACT: ${JSON.stringify(input.worldImpact, null, 2)}
+
+Process this choice. Update the world. Signal me if anything significant occurred.
+    `.trim();
+    }
+
+    async function buildWitnessPrompt(input: import("../libs/types").TurnInput): Promise<string> {
+        const db = await import("./surreal").then(m => m.getDB());
+        const [agentRows] = await db.query<[{ location_id: string }[]]>(
+            `SELECT location_id FROM world_agent WHERE id = $id`,
+            { id: input.playerId }
+        );
+        const playerLocation = agentRows?.[0]?.location_id ?? "unknown";
+
+        return `
+SESSION: ${input.sessionId}
+TURN: ${input.turnNumber}
+PLAYER ID: ${input.playerId}
+PLAYER LOCATION: ${playerLocation}
+
+The world has been updated. Read both graphs, assemble context,
+and produce the player's next 3-5 options. Follow your 7-step process.
+
+IMPORTANT RULES:
+- generate_action_options MUST be called every turn. It is not optional. If you are running low on steps,
+  skip additional context queries and call generate_action_options immediately.
+    `.trim();
+    }
+
+    function buildProsePrompt(
+        input: import("../libs/types").TurnInput,
+        witnessContext: string,
+        options: import("../libs/types").NarrativeOption[],
+        narrativePhase: import("../libs/types").NarrativePhaseState | null
+    ): string {
+        const phase = narrativePhase ?? {
+            current_phase: "ordinary_world",
+            phase_charge: 0,
+            archetype_cohesion: 0.8,
+            narrative_entropy: 0.3,
+        };
+        return `
+OUTPUT: 1-2 paragraphs, consisting of 3-5 sentences each. No more than 170 words total with an AVERAGE sentence length of
+15-20 words. ONLY use NO MORE THAN 8% adverbs and adjectives combined with an 85/15 split of Germanic/Latinate vocabulary
+with a Flesch-Kincaid Grade Level of 8-10. Write in the second person, present tense.
+Name the tension. Spark the imagination. Do not hide what is happening.
+
+CONTEXT FROM THE WITNESS:
+${witnessContext.slice(0, 1200)}
+
+OPTIONS GENERATED:
+${options.map((o, i) => `${i + 1}. ${o.text}`).join("\n")}
+
+GENRE: ${tone.replace("_", " ")}
+
+NARRATIVE PHASE: This is the ${phase.current_phase} phase of The Heroes Journey. The response should be grounded in
+where we are in that journey. If the ${phase.phase_charge} is low, the player is at the beginning of the ${phase.current_phase} phase and
+should be guided toward the next phase. If the ${phase.phase_charge} is high, the player is at the end of the
+${phase.current_phase} and the prose should reflect a rise in tension. The phase stats to pay CLOSE ATTENTION to
+are the archetype cohesion: ${phase.archetype_cohesion} and narrative entropy: ${(phase as any).narrative_entropy}.
+
+Write only the scene description. No options. No narration labels.
+    `.trim();
+    }
+
+    function buildEternalPrompt(signal: { text: string; significance: number; source?: string }): string {
+        return `
+The Tremor has flagged an event for your review.
+
+EVENT ID: ${signal.source ?? "unknown"}
+SIGNIFICANCE: ${signal.significance}
+REASON: ${signal.text}
+
+Evaluate this event. Decide whether to promote it to permanent lore.
+Check for contradictions. If promoting, write the lore. Validate and log.
+    `.trim();
+    }
+
+    function extractOptions(witnessResult: any): import("../libs/types").NarrativeOption[] {
+        const generatedOptions: import("../libs/types").NarrativeOption[] = [];
+
+        const extractFromItem = (resultItem: any) => {
+            const toolName = resultItem.toolName
+                ?? resultItem.payload?.toolName
+                ?? resultItem.payload?.name;
+
+            if (toolName === "generate_action_options" || toolName === "generate_dialogue_options") {
+                // Mastra wraps outputs across multiple possible variants depending on SDK version.
+                // Safest approach: traverse to find the first Array, which is guaranteed to be our options.
+                let optionsData: any[] | null = null;
+                
+                const searchForArray = (obj: any): any[] | null => {
+                    if (!obj || typeof obj !== "object") return null;
+                    if (Array.isArray(obj)) return obj;
+                    if (Array.isArray(obj.options)) return obj.options;
+                    if (Array.isArray(obj.result)) return obj.result;
+                    if (obj.payload && typeof obj.payload === "object") {
+                        const payloadRes = searchForArray(obj.payload);
+                        if (payloadRes) return payloadRes;
+                    }
+                    if (obj.result && typeof obj.result === "object") {
+                        const resultRes = searchForArray(obj.result);
+                        if (resultRes) return resultRes;
+                    }
+                    return null;
+                };
+
+                optionsData = searchForArray(resultItem);
+
+                console.log(`[extractOptions] FOUND ${toolName}! Valid Array Extracted:`, optionsData !== null);
+                
+                if (optionsData) {
+                    console.log(`[extractOptions] Extracted ${optionsData.length} options safely!`);
+                    generatedOptions.push(...optionsData);
+                } else {
+                    console.log(`[extractOptions] FAILED to extract options! Raw dump:`, JSON.stringify(resultItem));
+                }
+            }
+        };
+
+        for (const step of witnessResult.steps ?? []) {
+            // Mastra native AgentResult has step.toolResults
+            if (Array.isArray(step.toolResults)) {
+                for (const result of step.toolResults) {
+                    extractFromItem(result);
+                }
+            } else {
+                // ParallelWitnessLink produces a flattened array of ToolResult directly
+                extractFromItem(step);
+            }
+        }
+        
+        return generatedOptions;
+    }
+
+    async function readPhaseState(sessionId: string): Promise<import("../libs/types").NarrativePhaseState> {
+        const db = await import("./surreal").then(m => m.getDB());
+        const [rows] = await db.query<[import("../libs/types").NarrativePhaseState[]]>(
+            `SELECT * FROM narrative_state WHERE session_id = $sid LIMIT 1`,
+            { sid: sessionId }
+        );
+        return rows?.[0] ?? {
+            current_phase: "ordinary_world",
+            phase_charge: 0,
+            narrative_entropy: 0,
+            archetype_cohesion: 0.8,
+            player_resonance: 0,
+            inertia_resistance: 0.5,
+            point_of_no_return: 0,
+            pull_conflict: 0,
+            story_pace: 1.0,
+            breaking_point: 0,
+            event_distortion: 0,
+            world_awareness: 0,
+        };
+    }
+
+    function cleanProseResult(text: string): string {
+        if (!text) return text;
+
+        let cleaned = text.replace(/`[^`]*`/g, (match) => {
+            const content = match.slice(1, -1);
+            const instructionKeywords = [
+                "Avoid", "Use only", "Show only", "Focus on", "Use vivid",
+                "Use strong", "Use short", "Use active", "Use direct",
+                "Use concrete", "Use sensory", "Use staccato", "Use selective",
+                "Use \"filter\"", "Use \"slow-burn\"", "Use lean prose",
+                "(Avoid", "(Use", "(Show", "(Focus", "(Use vivid",
+            ];
+            const isInstruction = instructionKeywords.some(kw => content.includes(kw));
+            if (isInstruction) return "";
+            return match;
+        });
+
+        const paragraphs = cleaned.split(/\n\n+/);
+        const storyParagraphs = paragraphs.filter(p => {
+            const trimmed = p.trim();
+            if (!trimmed) return false;
+            if (trimmed.length < 50) {
+                const instructionPatterns = [
+                    /^Avoid\s/i, /^Use\s/i, /^Show\s/i, /^Focus\s/i,
+                    /^\(Avoid/i, /^\(Use/i, /^\(Show/i, /^\(Focus/i,
+                ];
+                if (instructionPatterns.some(pat => pat.test(trimmed))) return false;
+            }
+            const parenRatio = (trimmed.match(/\([^)]*\)/g) || []).join("").length / trimmed.length;
+            if (parenRatio > 0.5) return false;
+            return true;
+        });
+
+        return storyParagraphs
+            .join("\n\n")
+            .replace(/`/g, "")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+    }
+
+    async function persistBeat(
+        input: import("../libs/types").TurnInput,
+        options: import("../libs/types").NarrativeOption[],
+        sceneDescription: string
+    ): Promise<import("../libs/types").NarrativeBeat> {
+        const db = await import("./surreal").then(m => m.getDB());
+        const beat: import("../libs/types").NarrativeBeat = {
+            beatId: crypto.randomUUID(),
+            sessionId: input.sessionId,
+            turnNumber: input.turnNumber,
+            sceneDescription,
+            activeThreads: [],
+            loreContext: [],
+            options,
+            generatedBy: "witness",
+            chosenOptionId: input.chosenOptionId,
+            chosenAt: new Date().toISOString(),
+        };
+        await db.create<import("../libs/types").NarrativeBeat>(new Table("narrative_beat")).content(beat as unknown as Record<string, unknown>);
+        return beat;
+    }
+
+    async function runNpcAgents(
+        _sessionId: string,
+        _ids: string[]
+    ): Promise<NpcBatchResult> {
+        // NPC agents are a stub — wired up in npc-agent.ts separately.
+        return { results: [], totalToolCalls: 0 };
+    }
+
+    const { buildTremorAgent }  = await import("../agentic/game/agents/tremor-agent");
+    const { buildEternalAgent } = await import("../agentic/game/agents/eternal-agent");
+    const { buildWitnessAgent } = await import("../agentic/game/agents/witness-agent");
+    const { buildProseAgent }   = await import("../agentic/game/agents/prose-agent");
+
+    // Mastra Agent satisfies AgenticAgent at runtime — cast is safe.
+    // The generate() overloads accept {role,content}[] but TS can't see it through the union.
+    type AsAgenticAgent = (agent: unknown) => AgenticAgent;
+    const asAgent = (a: unknown) => a as AgenticAgent;
 
     return SaintEngine
         .builder()
@@ -174,8 +420,202 @@ export function buildEngineForGame(game: GameRecord): SaintEngine {
         .eternalThreshold(eternal)
         .maxSteps(12, 12, 12)
         .phaseThresholds(thresholds)
+        .npcAgents([])
+
+        // ── Agent instances ────────────────────────────────────────────────
+        .withAgent("tremor",  asAgent(buildTremorAgent(models.fast)))
+        .withAgent("eternal", asAgent(buildEternalAgent(models.fast)))
+        .withAgent("witness", asAgent(buildWitnessAgent(models.power)))
+        .withAgent("prose",   asAgent(buildProseAgent(models.power, tone)))
+
+        // ── Herald configuration ───────────────────────────────────────────
+        .withHerald({
+            game,
+            cooldownTurns: 3,
+            allowedPhases: [],
+        })
+
+        // ── Parallel Tremor ────────────────────────────────────────────────
+        // 4 focused branches run concurrently via Promise.allSettled.
+        // All tools are from game-tools.ts — no new tools created.
+        // PriorityMergeFanIn merges results, impact branch anchors any conflicts.
+        .withParallelTremor(
+            [
+                {
+                    name: "tremor_world",
+                    agent: asAgent(buildTremorAgent(models.fast, [
+                        "world_update_agent",
+                        "world_update_location",
+                        "world_update_faction",
+                        "world_update_concept",
+                    ])),
+                    tools: [
+                        "world_update_agent",
+                        "world_update_location",
+                        "world_update_faction",
+                        "world_update_concept",
+                    ],
+                    promptBuilder: (ctx: any) => buildTremorPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+                {
+                    name: "tremor_events",
+                    agent: asAgent(buildTremorAgent(models.fast, [
+                        "world_create_event",
+                        "world_resolve_event",
+                        "world_create_concept",
+                    ])),
+                    tools: [
+                        "world_create_event",
+                        "world_resolve_event",
+                        "world_create_concept",
+                    ],
+                    promptBuilder: (ctx: any) => buildTremorPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+                {
+                    name: "tremor_social",
+                    agent: asAgent(buildTremorAgent(models.fast, [
+                        "world_update_relationship",
+                        "propagate_mood",
+                        "propagate_concept",
+                        "propagate_player_mark",
+                    ])),
+                    tools: [
+                        "world_update_relationship",
+                        "propagate_mood",
+                        "propagate_concept",
+                        "propagate_player_mark",
+                    ],
+                    promptBuilder: (ctx: any) => buildTremorPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+                {
+                    // Impact is critical — if it fails the whole link aborts
+                    name: "tremor_impact",
+                    agent: asAgent(buildTremorAgent(models.fast, [
+                        "check_significance",
+                        "check_contradiction",
+                        "notify_eternal",
+                        "notify_eternal_contradiction",
+                    ])),
+                    tools: [
+                        "check_significance",
+                        "check_contradiction",
+                        "notify_eternal",
+                        "notify_eternal_contradiction",
+                    ],
+                    promptBuilder: (ctx: any) => buildTremorPrompt(ctx.input),
+                    maxSteps: 20,
+                    critical: true,
+                },
+            ],
+            new PriorityMergeFanIn([
+                "tremor_impact",
+                "tremor_events",
+                "tremor_social",
+                "tremor_world",
+            ])
+        )
+
+        // ── Parallel Witness ───────────────────────────────────────────────
+        .withParallelWitness(
+            [
+                {
+                    name: "witness_lore",
+                    agent: asAgent(buildWitnessAgent(models.power, [
+                        "lore_query_relevant",
+                        "lore_get_connections",
+                        "generate_action_options",
+                        "calculate_option_consequences",
+                    ])),
+                    tools: [
+                        "lore_query_relevant",
+                        "lore_get_connections",
+                        "generate_action_options",
+                        "calculate_option_consequences",
+                    ],
+                    promptBuilder: (ctx: any) => buildWitnessPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+                {
+                    name: "witness_world",
+                    agent: asAgent(buildWitnessAgent(models.power, [
+                        "check_story_phase",
+                        "world_query_active_events",
+                        "generate_action_options",
+                        "calculate_option_consequences",
+                    ])),
+                    tools: [
+                        "check_story_phase",
+                        "world_query_active_events",
+                        "generate_action_options",
+                        "calculate_option_consequences",
+                    ],
+                    promptBuilder: (ctx: any) => buildWitnessPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+                {
+                    name: "witness_social",
+                    agent: asAgent(buildWitnessAgent(models.power, [
+                        "world_query_nearby_agents",
+                        "world_get_agent_goals",
+                        "generate_dialogue_options",
+                        "calculate_option_consequences",
+                    ])),
+                    tools: [
+                        "world_query_nearby_agents",
+                        "world_get_agent_goals",
+                        "generate_dialogue_options",
+                        "calculate_option_consequences",
+                    ],
+                    promptBuilder: (ctx: any) => buildWitnessPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+                {
+                    name: "witness_faction",
+                    agent: asAgent(buildWitnessAgent(models.power, [
+                        "world_get_faction_tensions",
+                        "world_query_concepts_by_adoption",
+                        "generate_action_options",
+                        "calculate_option_consequences",
+                    ])),
+                    tools: [
+                        "world_get_faction_tensions",
+                        "world_query_concepts_by_adoption",
+                        "generate_action_options",
+                        "calculate_option_consequences",
+                    ],
+                    promptBuilder: (ctx: any) => buildWitnessPrompt(ctx.input),
+                    maxSteps: 20,
+                },
+            ],
+            new ConcatenatedFanIn()
+        )
+
+        // ── Genre Wiring ───────────────────────────────────────────────────
+        .whenRuntime(
+            (_state) => true,
+            async (sub) => {
+                const { GenreAtmosphereLink } = await import("../agentic/game/chain/links/genre-atmosphere-link");
+                sub.link(new GenreAtmosphereLink(tone));
+            }
+        )
+
+        // ── Dependency injection ───────────────────────────────────────────
+        .withExtractOptions(extractOptions)
+        .withReadPhaseState(readPhaseState)
+        .withBuildTremorPrompt(buildTremorPrompt)
+        .withBuildWitnessPrompt(buildWitnessPrompt)
+        .withBuildProsePrompt(buildProsePrompt)
+        .withBuildEternalPrompt(buildEternalPrompt)
+        .withCleanProseResult(cleanProseResult)
+        .withPersistBeat(persistBeat)
+        .withRunNpcAgents(runNpcAgents)
+
         .build();
 }
+
 
 // ── Session cache ──────────────────────────────────────────────────────────
 // Engines are stateless — all mutable state lives in SurrealDB.
@@ -225,7 +665,7 @@ export async function startSession(
     if (!game) throw new Error(`Game not found: ${gameId}`);
     if (game.status !== "ready") throw new Error(`Game ${gameId} not ready (status: ${game.status})`);
 
-    const engine = buildEngineForGame(game);
+    const engine = await buildEngineForGame(game);
     const sessionId = `session:${crypto.randomUUID()}`;
     const tone = resolveGenreTone(game.genre);
 
@@ -322,7 +762,7 @@ export async function resumeSession(
     const game = await getGame(record.game_id);
     if (!game) return null;
 
-    const engine: SaintEngine = buildEngineForGame(game);
+    const engine: SaintEngine = await buildEngineForGame(game);
     const session: GameSession = {
         sessionId: record.session_id,
         playerId: record.player_id,
