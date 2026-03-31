@@ -922,4 +922,12 @@ export interface EngineConfig {
 
     // Optional: NPC agents to run in parallel after Tremor
     npcAgentIds?: string[];
+
+    // Optional: parallel fan-out config for Tremor and Witness
+    // These are typed as unknown here to keep libs/types.ts independent of chain types.
+    // SaintEngine casts them internally.
+    tremorBranches?: unknown[];
+    tremorFanIn?: unknown;
+    witnessBranches?: unknown[];
+    witnessFanIn?: unknown;
 }

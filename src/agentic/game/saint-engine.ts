@@ -1,104 +1,415 @@
 "use server";
 
-// src/mastra/saint-engine.ts
+// src/agentic/game/saint-engine.ts
 //
 // The SAINT Engine — the game loop superclass.
-// Built with the Builder pattern so each game world can configure
-// its own agent models, tool sets, genre tone, and phase thresholds
-// without changing the loop itself.
 //
-// Loop order every turn:
-//   1. Tremor  — processes player choice, mutates world graph
-//   2. Eternal — promotes significant events to lore (conditional)
-//   3. Witness — reads both graphs, assembles options
-//   4. Prose   — writes the scene description
-//   5. Return  — scene + options → player
+// Architecture: AgentChain-based turn pipeline.
+// Links run in priority order:
+//   5  — Herald        (conditional: phase + cooldown)
+//   10 — Tremor        (world mutation)
+//   20 — NPC Agents    (optional, parallel)
+//   30 — Eternal       (conditional: significance threshold)
+//   40 — Witness       (narrative assembly)
+//   50 — Prose         (scene generation)
+//
+// The engine is built via EngineBuilder (builder pattern).
+// Agent instances are injected from the agents/ directory.
+// All prompt builders, helpers, and persist logic are injected as deps.
 
-import { Agent } from "@mastra/core/agent";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { Table } from "surrealdb";
 import { getDB } from "../../libs/surreal";
-import { getGame } from "~/libs/game";
-import { PROSE_SYSTEM_PROMPTS } from "./prose";
+import { Table } from "surrealdb";
 import type {
     NarrativeOption,
     NarrativeBeat,
-    PlayerInfluenceVectors,
     NarrativePhaseState,
-    TurnProgress,
-} from "../../libs/types";
-import {
-    TREMOR_SYSTEM_PROMPT,
-    TREMOR_OUTPUT_CONSTRAINT,
-} from "../game/prompts/reflector-prompt";
-import {
-    ETERNAL_SYSTEM_PROMPT,
-    ETERNAL_OUTPUT_CONSTRAINT,
-} from "../game/prompts/curator-prompt";
-import {
-    WITNESS_SYSTEM_PROMPT,
-} from "../game/prompts/generator-prompt";
-import {
     TurnInput,
     TurnOutput,
     EngineConfig,
+    PlayerInfluenceVectors,
+    GameRecord,
 } from "../../libs/types";
-import { generateHeraldContext } from "./herald-agent";
-
-// ── Tool imports ───────────────────────────────────────────────────────────
-// Tremor tools
 import {
-    worldUpdateAgentTool,
-    worldUpdateLocationTool,
-    worldUpdateFactionTool,
-    worldUpdateConceptTool,
-    worldCreateEventTool,
-    worldResolveEventTool,
-    worldCreateConceptTool,
-    worldUpdateRelationshipTool,
-    propagateMoodTool,
-    propagateConceptTool,
-    propagatePlayerMarkTool,
-    checkSignificanceTool,
-    checkContradictionTool,
-    notifyEternalTool,
-    notifyEternalContradictionTool,
-} from "./game-tools";
+    AgentChain,
+    BaseChainLink,
+    ChainContext,
+    NarrativeState,
+    PhaseState,
+    AgentResult,
+    AgenticAgent,
+    NpcBatchResult,
+    ParallelBranch,
+    FanInStrategy,
+    TremorLink,
+    ParallelTremorLink,
+    NpcAgentsLink,
+    HeraldLink,
+    HeraldConfig,
+    EternalLink,
+    WitnessLink,
+    ParallelWitnessLink,
+    ProseLink,
+    ConcatenatedFanIn,
+} from "./chain";
+import type { TurnProgress } from "../../libs/types";
 
-// Eternal tools
-import {
-    worldGetEventTool,
-    worldGetAgentTool,
-    worldGetConceptTool,
-    loreQueryContradictionsTool,
-    loreGetConnectionsTool,
-    loreCreateNodeTool,
-    loreUpdateNodeTool,
-    loreSetCanonTool,
-    loreCreateRelationTool,
-    loreMergeNodesTool,
-    loreArchiveNodeTool,
-    loreResolveContradictionTool,
-    validateCanonConsistencyTool,
-} from "./game-tools";
+// ═══════════════════════════════════════════════════════════════════════════
+// SAINT ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Witness tools
-import {
-    loreQueryRelevantTool,
-    loreGetByKindTool,
-    worldQueryNearbyAgentsTool,
-    worldQueryActiveEventsTool,
-    worldGetAgentGoalsTool,
-    worldQueryConceptsByAdoptionTool,
-    worldGetFactionTensionsTool,
-    checkStoryPhaseTool,
-    generateActionOptionsTool,
-    generateDialogueOptionsTool,
-    calculateOptionConsequencesTool,
-} from "./game-tools";
+export class SaintEngine {
+    private chain: AgentChain;
+    private runtimeGatedChains: Array<{
+        chain: AgentChain;
+        gate: (state: NarrativeState) => boolean;
+    }>;
 
-const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
+    // Agent instances (injected by builder)
+    private agents: Map<string, AgenticAgent> = new Map();
 
+    // Shared utilities (injected by builder)
+    private extractOptions: (result: AgentResult) => NarrativeOption[];
+    private readPhaseState: (sessionId: string) => Promise<NarrativePhaseState>;
+    private buildTremorPrompt: (input: TurnInput) => string;
+    private buildWitnessPrompt: (input: TurnInput) => Promise<string>;
+    private buildProsePrompt: (
+        input: TurnInput,
+        witnessText: string,
+        options: NarrativeOption[],
+        phaseState: NarrativePhaseState | null
+    ) => string;
+    private buildEternalPrompt: (signal: { text: string; significance: number }) => string;
+    private cleanProseResult: (text: string) => string;
+    private persistBeat: (
+        input: TurnInput,
+        options: NarrativeOption[],
+        sceneDescription: string
+    ) => Promise<NarrativeBeat>;
+    private runNpcAgents: (
+        sessionId: string,
+        ids: string[]
+    ) => Promise<NpcBatchResult>;
+
+    private engineConfig: EngineConfig;
+    private heraldConfig: { game: GameRecord; cooldownTurns: number; allowedPhases: string[] };
+
+    private constructor(
+        config: EngineConfig,
+        heraldCfg: { game: GameRecord; cooldownTurns: number; allowedPhases: string[] },
+        agents: Map<string, AgenticAgent>,
+        deps: {
+            extractOptions: SaintEngine["extractOptions"];
+            readPhaseState: SaintEngine["readPhaseState"];
+            buildTremorPrompt: SaintEngine["buildTremorPrompt"];
+            buildWitnessPrompt: SaintEngine["buildWitnessPrompt"];
+            buildProsePrompt: SaintEngine["buildProsePrompt"];
+            buildEternalPrompt: SaintEngine["buildEternalPrompt"];
+            cleanProseResult: SaintEngine["cleanProseResult"];
+            persistBeat: SaintEngine["persistBeat"];
+            runNpcAgents: SaintEngine["runNpcAgents"];
+        },
+        runtimeGatedChains: Array<{
+            links: BaseChainLink[];
+            gate: (state: NarrativeState) => boolean;
+        }>
+    ) {
+        this.engineConfig = config;
+        this.heraldConfig = heraldCfg;
+        this.agents = agents;
+        this.extractOptions = deps.extractOptions;
+        this.readPhaseState = deps.readPhaseState;
+        this.buildTremorPrompt = deps.buildTremorPrompt;
+        this.buildWitnessPrompt = deps.buildWitnessPrompt;
+        this.buildProsePrompt = deps.buildProsePrompt;
+        this.buildEternalPrompt = deps.buildEternalPrompt;
+        this.cleanProseResult = deps.cleanProseResult;
+        this.persistBeat = deps.persistBeat;
+        this.runNpcAgents = deps.runNpcAgents;
+
+        this.chain = this.buildChain();
+        this.runtimeGatedChains = runtimeGatedChains.map(
+            ({ links, gate }) => ({
+                chain: new AgentChain(links),
+                gate,
+            })
+        );
+    }
+
+    // ── Builder entry point ────────────────────────────────────────────
+
+    static builder(): SaintEngineBuilder {
+        return new SaintEngineBuilder();
+    }
+
+    // ── Build the main chain ───────────────────────────────────────────
+
+    private buildChain(): AgentChain {
+        const links: BaseChainLink[] = [];
+        const cfg = this.engineConfig;
+
+        const tremorAgent = this.agents.get("tremor")!;
+        const eternalAgent = this.agents.get("eternal")!;
+        const witnessAgent = this.agents.get("witness")!;
+        const proseAgent = this.agents.get("prose")!;
+
+        // ── Link 5: Herald (conditional: phase + cooldown) ─────────────
+        links.push(new HeraldLink(
+            this.heraldConfig.game,
+            {
+                cooldownTurns: this.heraldConfig.cooldownTurns,
+                allowedPhases: this.heraldConfig.allowedPhases,
+            }
+        ));
+
+        // ── Link 10: Tremor (parallel or single) ───────────────────────
+        if (cfg.tremorBranches && cfg.tremorBranches.length > 0) {
+            links.push(new ParallelTremorLink(
+                cfg.tremorBranches as ParallelBranch[],
+                (cfg.tremorFanIn as FanInStrategy) ?? new ConcatenatedFanIn()
+            ));
+        } else {
+            links.push(new TremorLink(
+                tremorAgent,
+                { maxSteps: cfg.tremorMaxSteps },
+                (input) => this.buildTremorPrompt(input)
+            ));
+        }
+
+        // ── Link 20: NPC Agents ─────────────────────────────────────────
+        links.push(new NpcAgentsLink(
+            cfg.npcAgentIds ?? [],
+            this.runNpcAgents
+        ));
+
+        // ── Link 30: Eternal (conditional on significance) ─────────────
+        links.push(new EternalLink(
+            eternalAgent,
+            {
+                maxSteps: cfg.eternalMaxSteps,
+                significanceThreshold: cfg.eternalSignificanceThreshold,
+            },
+            (signal) => this.buildEternalPrompt(signal)
+        ));
+
+        // ── Link 40: Witness (parallel or single) ──────────────────────
+        if (cfg.witnessBranches && cfg.witnessBranches.length > 0) {
+            links.push(new ParallelWitnessLink(
+                cfg.witnessBranches as ParallelBranch[],
+                (cfg.witnessFanIn as FanInStrategy) ?? new ConcatenatedFanIn(),
+                this.extractOptions,
+                this.readPhaseState
+            ));
+        } else {
+            links.push(new WitnessLink(
+                witnessAgent,
+                { maxSteps: cfg.witnessMaxSteps },
+                (input) => this.buildWitnessPrompt(input),
+                this.extractOptions,
+                this.readPhaseState
+            ));
+        }
+
+        // ── Link 50: Prose ─────────────────────────────────────────────
+        links.push(new ProseLink(
+            proseAgent,
+            (input, witnessText, options, phaseState) =>
+                this.buildProsePrompt(input, witnessText, options, phaseState),
+            this.cleanProseResult
+        ));
+
+        return new AgentChain(links);
+    }
+
+    // ── Run turn ───────────────────────────────────────────────────────
+
+    async runTurn(
+        input: TurnInput,
+        onProgress?: (update: TurnProgress) => void
+    ): Promise<TurnOutput> {
+        const start = Date.now();
+
+        // Load session state for context
+        const state = await this.loadNarrativeState(input.sessionId);
+        const player = await this.loadPlayerSession(input.sessionId);
+
+        // Load the turn number of the last herald appearance
+        const lastHeraldTurn = await this.loadLastHeraldTurn(input.sessionId);
+
+        // Build chain context
+        // Cast onProgress: TurnProgress and ProgressUpdate share the same
+        // runtime shape {phase, message}; TurnProgress just narrows the phase union.
+        const ctx: ChainContext = {
+            input,
+            state,
+            player,
+            mutations: [],
+            tremorResult: null,
+            eternalSignal: null,
+            eternalResult: null,
+            npcResults: null,
+            witnessResult: null,
+            proseResult: null,
+            heraldText: null,
+            phaseState: null,
+            options: [],
+            toolCallCount: 0,
+            metadata: { lastHeraldTurn },
+            onProgress: onProgress as ((u: { phase: string; message: string }) => void) | undefined,
+        };
+
+        // ── Execute main chain ──────────────────────────────────────────
+        await this.chain.execute(ctx);
+
+        // ── Execute runtime-gated chains ────────────────────────────────
+        for (const { chain, gate } of this.runtimeGatedChains) {
+            if (!gate(ctx.state)) continue;
+            await chain.execute(ctx);
+            if (ctx.metadata.chainTerminatedBy) break;
+        }
+
+        // ── Apply accumulated mutations ─────────────────────────────────
+        await this.applyMutations(ctx.mutations, input.sessionId);
+
+        // ── Persist herald turn if it spoke ────────────────────────────
+        if (ctx.metadata.heraldSpokeThisTurn) {
+            await this.persistHeraldTurn(input.sessionId, input.turnNumber);
+        }
+
+        // ── Persist the beat ───────────────────────────────────────────
+        const cleanSceneDescription =
+            (ctx.metadata.cleanSceneDescription as string) ?? "";
+        const beat = await this.persistBeat(input, ctx.options, cleanSceneDescription);
+        console.log("===Beat===", beat);
+
+        // Signal completion
+        onProgress?.({ phase: "complete", message: "" });
+
+        return {
+            beat,
+            sceneDescription: cleanSceneDescription,
+            heraldText: ctx.heraldText ?? undefined,
+            options: ctx.options,
+            phaseState: ctx.phaseState ?? await this.loadNarrativeState(input.sessionId),
+            eternalRan: (ctx.metadata.eternalRan as boolean) ?? false,
+            toolCallCount: ctx.toolCallCount,
+            durationMs: Date.now() - start,
+        };
+    }
+
+    // ── Private helpers ────────────────────────────────────────────────
+
+    private async loadNarrativeState(sessionId: string): Promise<NarrativePhaseState> {
+        const db = await getDB();
+        const [rows] = await db.query<[NarrativePhaseState[]]>(
+            `SELECT * FROM narrative_state WHERE session_id = $sid LIMIT 1`,
+            { sid: sessionId }
+        );
+        return rows?.[0] ?? {
+            current_phase: "ordinary_world",
+            phase_charge: 0,
+            narrative_entropy: 0,
+            archetype_cohesion: 0.8,
+            player_resonance: 0,
+            inertia_resistance: 0.5,
+            point_of_no_return: 0,
+            pull_conflict: 0,
+            story_pace: 1.0,
+            breaking_point: 0,
+            event_distortion: 0,
+            world_awareness: 0,
+        };
+    }
+
+    private async loadPlayerSession(sessionId: string): Promise<PlayerInfluenceVectors> {
+        const db = await getDB();
+        const [rows] = await db.query<[PlayerInfluenceVectors[]]>(
+            `SELECT * FROM player_session WHERE session_id = $sid LIMIT 1`,
+            { sid: sessionId }
+        );
+        return rows?.[0] ?? {
+            session_id: sessionId,
+            game_id: "",
+            player_id: "",
+            moral_stance: 0,
+            approach: 0,
+            scale: 0.5,
+            foresight: 0,
+            pull_on_world: [0, 0, 0],
+            idea_amplification: {},
+            stability_effect: 0,
+        };
+    }
+
+    private async loadLastHeraldTurn(sessionId: string): Promise<number> {
+        try {
+            const db = await getDB();
+            const [rows] = await db.query<[{ last_herald_turn: number }[]]>(
+                `SELECT last_herald_turn FROM game_session WHERE session_id = $sid LIMIT 1`,
+                { sid: sessionId }
+            );
+            return rows?.[0]?.last_herald_turn ?? 0;
+        } catch {
+            return 0;
+        }
+    }
+
+    private async persistHeraldTurn(sessionId: string, turnNumber: number): Promise<void> {
+        try {
+            const db = await getDB();
+            await db.query(
+                `UPDATE game_session SET last_herald_turn = $turn WHERE session_id = $sid`,
+                { sid: sessionId, turn: turnNumber }
+            );
+        } catch (err) {
+            console.error("[Herald] Failed to persist herald turn:", err);
+        }
+    }
+
+    private async applyMutations(
+        mutations: ChainContext["mutations"],
+        sessionId: string
+    ): Promise<void> {
+        const grouped = new Map<string, Record<string, unknown>>();
+
+        for (const m of mutations) {
+            if (!grouped.has(m.type)) grouped.set(m.type, {});
+            grouped.get(m.type)![m.field] = m.value;
+        }
+
+        for (const [type, fields] of grouped) {
+            console.log(
+                `[Mutation] ${type}: ${JSON.stringify(fields)} ` +
+                `(${mutations.filter(m => m.type === type).length} mutations)`
+            );
+            // await db.query(`UPDATE ${type} SET ... WHERE session_id = $sid`, { sid: sessionId, ...fields });
+        }
+    }
+
+    // ── Internal build method (used by builder) ────────────────────────
+
+    static _internalBuild(
+        config: EngineConfig,
+        heraldCfg: { game: GameRecord; cooldownTurns: number; allowedPhases: string[] },
+        agents: Map<string, AgenticAgent>,
+        deps: {
+            extractOptions: SaintEngine["extractOptions"];
+            readPhaseState: SaintEngine["readPhaseState"];
+            buildTremorPrompt: SaintEngine["buildTremorPrompt"];
+            buildWitnessPrompt: SaintEngine["buildWitnessPrompt"];
+            buildProsePrompt: SaintEngine["buildProsePrompt"];
+            buildEternalPrompt: SaintEngine["buildEternalPrompt"];
+            cleanProseResult: SaintEngine["cleanProseResult"];
+            persistBeat: SaintEngine["persistBeat"];
+            runNpcAgents: SaintEngine["runNpcAgents"];
+        },
+        runtimeGatedChains: Array<{
+            links: BaseChainLink[];
+            gate: (state: NarrativeState) => boolean;
+        }>
+    ): SaintEngine {
+        return new SaintEngine(config, heraldCfg, agents, deps, runtimeGatedChains);
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ENGINE BUILDER
@@ -106,6 +417,31 @@ const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
 
 export class SaintEngineBuilder {
     private config: Partial<EngineConfig> = {};
+    private agents: Map<string, AgenticAgent> = new Map();
+    private chainLinks: BaseChainLink[] = [];
+    private runtimeGatedChains: Array<{
+        links: BaseChainLink[];
+        gate: (state: NarrativeState) => boolean;
+    }> = [];
+    private heraldCfg: { game: GameRecord; cooldownTurns: number; allowedPhases: string[] } = {
+        game: null as unknown as GameRecord,
+        cooldownTurns: 3,
+        allowedPhases: [],
+    };
+
+    private deps: Partial<{
+        extractOptions: SaintEngine["extractOptions"];
+        readPhaseState: SaintEngine["readPhaseState"];
+        buildTremorPrompt: SaintEngine["buildTremorPrompt"];
+        buildWitnessPrompt: SaintEngine["buildWitnessPrompt"];
+        buildProsePrompt: SaintEngine["buildProsePrompt"];
+        buildEternalPrompt: SaintEngine["buildEternalPrompt"];
+        cleanProseResult: SaintEngine["cleanProseResult"];
+        persistBeat: SaintEngine["persistBeat"];
+        runNpcAgents: SaintEngine["runNpcAgents"];
+    }> = {};
+
+    // ── Config ─────────────────────────────────────────────────────────
 
     powerModel(model: string): this {
         this.config.powerModel = model;
@@ -144,726 +480,162 @@ export class SaintEngineBuilder {
         return this;
     }
 
+    // ── Agent registration ─────────────────────────────────────────────
+
+    withAgent(name: string, agent: AgenticAgent): this {
+        this.agents.set(name, agent);
+        return this;
+    }
+
+    // ── Herald configuration ───────────────────────────────────────────
+
+    withHerald(cfg: {
+        game: GameRecord;
+        cooldownTurns?: number;
+        allowedPhases?: string[];
+    }): this {
+        this.heraldCfg = {
+            game: cfg.game,
+            cooldownTurns: cfg.cooldownTurns ?? 3,
+            allowedPhases: cfg.allowedPhases ?? [],
+        };
+        return this;
+    }
+
+    // ── Parallel tremor ────────────────────────────────────────────────
+
+    withParallelTremor(
+        branches: ParallelBranch[],
+        fanIn?: FanInStrategy
+    ): this {
+        this.config.tremorBranches = branches;
+        this.config.tremorFanIn = fanIn;
+        return this;
+    }
+
+    // ── Parallel witness ───────────────────────────────────────────────
+
+    withParallelWitness(
+        branches: ParallelBranch[],
+        fanIn?: FanInStrategy
+    ): this {
+        this.config.witnessBranches = branches;
+        this.config.witnessFanIn = fanIn;
+        return this;
+    }
+
+    // ── Runtime-gated chain ────────────────────────────────────────────
+
+    whenRuntime(
+        gate: (state: NarrativeState) => boolean,
+        configure: (sub: ChainSubBuilder) => void
+    ): this {
+        const sub = new ChainSubBuilder();
+        configure(sub);
+        this.runtimeGatedChains.push({ links: sub.getLinks(), gate });
+        return this;
+    }
+
+    // ── Dependency injection ───────────────────────────────────────────
+
+    withExtractOptions(fn: SaintEngine["extractOptions"]): this {
+        this.deps.extractOptions = fn;
+        return this;
+    }
+
+    withReadPhaseState(fn: SaintEngine["readPhaseState"]): this {
+        this.deps.readPhaseState = fn;
+        return this;
+    }
+
+    withBuildTremorPrompt(fn: SaintEngine["buildTremorPrompt"]): this {
+        this.deps.buildTremorPrompt = fn;
+        return this;
+    }
+
+    withBuildWitnessPrompt(fn: SaintEngine["buildWitnessPrompt"]): this {
+        this.deps.buildWitnessPrompt = fn;
+        return this;
+    }
+
+    withBuildProsePrompt(fn: SaintEngine["buildProsePrompt"]): this {
+        this.deps.buildProsePrompt = fn;
+        return this;
+    }
+
+    withBuildEternalPrompt(fn: SaintEngine["buildEternalPrompt"]): this {
+        this.deps.buildEternalPrompt = fn;
+        return this;
+    }
+
+    withCleanProseResult(fn: SaintEngine["cleanProseResult"]): this {
+        this.deps.cleanProseResult = fn;
+        return this;
+    }
+
+    withPersistBeat(fn: SaintEngine["persistBeat"]): this {
+        this.deps.persistBeat = fn;
+        return this;
+    }
+
+    withRunNpcAgents(fn: SaintEngine["runNpcAgents"]): this {
+        this.deps.runNpcAgents = fn;
+        return this;
+    }
+
+    // ── Build ──────────────────────────────────────────────────────────
+
     build(): SaintEngine {
         // Apply defaults
-        //
-        // MODEL STRATEGY — read this before changing anything:
-        //
-        // FAST MODEL (haiku-class):
-        //   Tremor, Eternal, NPC agents.
-        //   These are database operators. They read a fact, make one decision,
-        //   write one record. They should produce 3-5 sentences MAX per tool call.
-        //   Low temperature. No chain-of-thought. Just the update.
-        //
-        // POWER MODEL (sonnet-class):
-        //   Witness and Prose Agent only.
-        //   The Witness assembles narrative context — it needs to reason across
-        //   many nodes and make quality judgments about tension and options.
-        //   The Prose Agent writes what the player reads — quality is load-bearing.
-        //   These are the only two agents where model quality directly affects
-        //   the player experience. Everything else is infrastructure.
-        //
-        // NEVER use thinking/reasoning models anywhere in this loop.
-        // Token cost per turn is already high. Thinking tokens are invisible
-        // to the player and produce no narrative value here.
-        //
         const resolved: EngineConfig = {
             powerModel: this.config.powerModel ?? "anthropic/claude-haiku-4-5",
             fastModel: this.config.fastModel ?? "anthropic/claude-haiku-4-5",
             proseModel: this.config.proseModel ?? "anthropic/claude-haiku-4-5",
             genreTone: this.config.genreTone ?? "fantasy",
             eternalSignificanceThreshold: this.config.eternalSignificanceThreshold ?? 0.6,
-            tremorMaxSteps: this.config.tremorMaxSteps ?? 30,
-            eternalMaxSteps: this.config.eternalMaxSteps ?? 20,
-            witnessMaxSteps: this.config.witnessMaxSteps ?? 25,
+            tremorMaxSteps: this.config.tremorMaxSteps ?? 12,
+            eternalMaxSteps: this.config.eternalMaxSteps ?? 12,
+            witnessMaxSteps: this.config.witnessMaxSteps ?? 12,
             phaseThresholds: this.config.phaseThresholds ?? {},
             npcAgentIds: this.config.npcAgentIds ?? [],
+            // Pass-through parallel config if set
+            tremorBranches: this.config.tremorBranches,
+            tremorFanIn: this.config.tremorFanIn,
+            witnessBranches: this.config.witnessBranches,
+            witnessFanIn: this.config.witnessFanIn,
         };
-        return new SaintEngine(resolved);
+
+        return SaintEngine._internalBuild(
+            resolved,
+            this.heraldCfg,
+            this.agents,
+            {
+                extractOptions: this.deps.extractOptions!,
+                readPhaseState: this.deps.readPhaseState!,
+                buildTremorPrompt: this.deps.buildTremorPrompt!,
+                buildWitnessPrompt: this.deps.buildWitnessPrompt!,
+                buildProsePrompt: this.deps.buildProsePrompt!,
+                buildEternalPrompt: this.deps.buildEternalPrompt!,
+                cleanProseResult: this.deps.cleanProseResult!,
+                persistBeat: this.deps.persistBeat!,
+                runNpcAgents: this.deps.runNpcAgents!,
+            },
+            this.runtimeGatedChains
+        );
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ENGINE SUPERCLASS
-// ═══════════════════════════════════════════════════════════════════════════
+// ── Chain sub-builder ──────────────────────────────────────────────────────
 
-export class SaintEngine {
-    private config: EngineConfig;
-    private tremorAgent: Agent;
-    private eternalAgent: Agent;
-    private witnessAgent: Agent;
-    private proseAgent: Agent;
+export class ChainSubBuilder {
+    private links: BaseChainLink[] = [];
 
-    constructor(config: EngineConfig) {
-        this.config = config;
-        this.tremorAgent = this.buildTremorAgent();
-        this.eternalAgent = this.buildEternalAgent();
-        this.witnessAgent = this.buildWitnessAgent();
-        this.proseAgent = this.buildProseAgent();
+    link(chainLink: BaseChainLink): this {
+        this.links.push(chainLink);
+        return this;
     }
 
-    // ── Factory: static entry point ───────────────────────────────────────
-
-    static builder(): SaintEngineBuilder {
-        return new SaintEngineBuilder();
-    }
-
-    // ── Main loop ─────────────────────────────────────────────────────────
-
-    async runTurn(input: TurnInput, onProgress?: (update: TurnProgress) => void): Promise<TurnOutput> {
-        const start = Date.now();
-        let toolCallCount = 0;
-        let eternalRan = false;
-
-        // Narrative message arrays for player-facing progress
-        const tremorMessages = [
-            "The World is shifting in response to your actions...",
-            "A ripple moves through the World...",
-            "Action is being taken in response to what you just did...",
-            "What you just did can never be undone...",
-            "A new World is taking shape...",
-        ];
-        const eternalMessages = [
-            "...The Old World will remember this...",
-            "...What you did just became canon...",
-            "...History is being written...",
-            "...The Eternals have chosen to remember this moment...",
-            "...demanding an Eternal record be kept...",
-        ];
-        const witnessMessages = [
-            "...so it prepares a response from those who have witnessed it.",
-            "...and so, the Witnesses are convening to take action.",
-            "...The die has been cast.",
-            "...A new reality is taking shape.",
-        ];
-
-        // ── STEP 0: HERALD (runs before everything, no other agent depends on it) ──
-        // The Herald speaks first — generates brief contextual text for the player to read
-        // while the other agents (Tremor, Eternal, Witness, Prose) run in the background
-        onProgress?.({ phase: "herald", message: "The Herald speaks..." });
-
-        let heraldText = "";
-        try {
-            const game = await getGame(input.gameId);
-            if (game) {
-                const heraldResult = await generateHeraldContext(
-                    game,
-                    input.sessionId,
-                    input.turnNumber,
-                    input.chosenOptionText || undefined
-                );
-                heraldText = heraldResult.heraldText;
-                console.log("[===Herald===] Herald text:", heraldText);
-                // Send herald text as a progress event so the client can start displaying it
-                onProgress?.({ phase: "herald", message: heraldText });
-            }
-        } catch (err) {
-            console.error("[===Herald===] Error generating herald context:", err);
-            // Herald failed — continue without herald text, other agents still run
-        }
-
-        // ── STEP 1: TREMOR ────────────────────────────────────────────────
-        // Tremor message varies based on world impact weight
-        const worldImpact = input.worldImpact as { vectorDeltas?: { moral_stance?: number; approach?: number } };
-        console.log('===World Impact===', worldImpact);
-
-        const isDramatic =
-            Math.abs(worldImpact?.vectorDeltas?.moral_stance ?? 0) > 0.2 ||
-            Math.abs(worldImpact?.vectorDeltas?.approach ?? 0) > 0.2;
-        console.log('===Is Dramatic===', isDramatic);
-
-        const tremorMsg = isDramatic
-            ? "The world shakes."
-            : tremorMessages[input.turnNumber % tremorMessages.length];
-
-        onProgress?.({ phase: "tremor", message: tremorMsg });
-
-        const tremorResult = await this.tremorAgent.generate(
-            [
-                { role: "user", content: this.buildTremorPrompt(input) }
-            ],
-            {
-                maxSteps: this.config.tremorMaxSteps,
-                onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
-                    toolCalls?.forEach((tc, i) => {
-                        const name = tc.payload?.toolName ?? tc.payload?.toolName ?? 'unknown';
-                        const result = toolResults?.[i];
-                        const resultPreview = result
-                            ? JSON.stringify(result.payload?.result ?? result.payload ?? result).slice(0, 120)
-                            : 'no result';
-                        console.log(`[===Tremor===] tool: ${name} | result: ${resultPreview}`);
-                    });
-                    console.log(`[===Tremor===] tokens: ${usage?.inputTokens}in / ${usage?.outputTokens}out | finish: ${finishReason}`);
-                }
-            }
-        );
-        toolCallCount += this.countToolCalls(tremorResult);
-
-        // ── STEP 2: ETERNAL (conditional) ─────────────────────────────────
-        const eternalSignal = this.extractEternalSignal(tremorResult.text);
-
-        if (eternalSignal && eternalSignal.significance >= this.config.eternalSignificanceThreshold) {
-            const eternalMsg = eternalMessages[input.turnNumber % eternalMessages.length];
-            onProgress?.({ phase: "eternal", message: eternalMsg });
-
-            const eternalResult = await this.eternalAgent.generate(
-                [
-                    { role: "user", content: this.buildEternalPrompt(eternalSignal) }
-                ],
-                {
-                    maxSteps: this.config.eternalMaxSteps,
-                    onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
-                        toolCalls?.forEach((tc, i) => {
-                            const name = tc.payload?.toolName ?? tc.payload?.toolName ?? 'unknown';
-                            const result = toolResults?.[i];
-                            const resultPreview = result
-                                ? JSON.stringify(result.payload?.result ?? result.payload ?? result).slice(0, 120)
-                                : 'no result';
-                            console.log(`[===Eternal===] tool: ${name} | result: ${resultPreview}`);
-                        });
-                        console.log(`[===Eternal===] tokens: ${usage?.inputTokens}in / ${usage?.outputTokens}out | finish: ${finishReason}`);
-                    }
-                }
-            );
-            toolCallCount += this.countToolCalls(eternalResult);
-            eternalRan = true;
-        }
-
-        // ── STEP 3: NPC AGENTS (parallel, optional) ────────────────────────
-        if (this.config.npcAgentIds && this.config.npcAgentIds.length > 0) {
-            const npcResults = await this.runNpcAgents(input.sessionId, this.config.npcAgentIds);
-            toolCallCount += npcResults.totalToolCalls;
-            console.log('===NPC Results===', npcResults);
-            console.log('===Tool Call Count===', toolCallCount);
-        }
-
-        // ── STEP 4: WITNESS ────────────────────────────────────────────────
-        const witnessMsg = witnessMessages[input.turnNumber % witnessMessages.length];
-        onProgress?.({ phase: "witness", message: witnessMsg });
-
-        console.log('=== Input ===', input)
-        const witnessPrompt = await this.buildWitnessPrompt(input);
-        const witnessResult = await this.witnessAgent.generate(
-            [
-                { role: "user", content: witnessPrompt }
-            ],
-            {
-                maxSteps: this.config.witnessMaxSteps,
-                onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
-                    toolCalls?.forEach((tc, i) => {
-                        const name = tc.payload?.toolName ?? tc.payload?.toolName ?? 'unknown';
-                        const result = toolResults?.[i];
-                        const resultPreview = result
-                            ? JSON.stringify(result.payload?.result ?? result.payload ?? result).slice(0, 120)
-                            : 'no result';
-                        console.log(`[===Witness===] tool: ${name} | result: ${resultPreview}`);
-                    });
-                    console.log(`[===Witness===] tokens: ${usage?.inputTokens}in / ${usage?.outputTokens}out | finish: ${finishReason}`);
-                }
-            }
-        );
-        toolCallCount += this.countToolCalls(witnessResult);
-
-        // Temporary — add before the extractOptions call
-        const firstStepWithTools = witnessResult.steps?.find(
-            (s: any) => s.toolResults?.length > 0
-        );
-        console.log('[Options debug]', JSON.stringify(
-            firstStepWithTools?.toolResults?.[0], null, 2
-        ).slice(0, 400));
-
-        const options = this.extractOptions(witnessResult);
-        console.log('===Options===', options);
-        const phaseState = await this.readPhaseState(input.sessionId);
-        console.log('===Phase State===', phaseState);
-
-        // ── STEP 5: PROSE AGENT ────────────────────────────────────────────
-        onProgress?.({ phase: "prose", message: "Finding the words…" });
-
-        const proseResult = await this.proseAgent.generate([
-            {
-                role: "user",
-                content: this.buildProsePrompt(input, witnessResult.text, options, phaseState),
-            }
-        ]);
-        console.log('===Prose Result===', proseResult.text);
-        console.log('===Prose Reasoning===', proseResult.reasoningText);
-        // Prose agent has no tools — 0 additional tool calls
-
-        // Clean the prose output to remove any instruction artifacts the LLM echoed back
-        const cleanSceneDescription = this.cleanProseResult(proseResult.text);
-        console.log('===Clean Scene Description===', cleanSceneDescription);
-
-        // ── STEP 6: PERSIST AND RETURN ────────────────────────────────────
-        const beat = await this.persistBeat(input, options, cleanSceneDescription);
-        console.log('===Beat===', beat);
-
-        // Signal completion — no message, scene arriving is the signal
-        onProgress?.({ phase: "complete", message: "" });
-
-        return {
-            beat,
-            sceneDescription: cleanSceneDescription,
-            heraldText,
-            options,
-            phaseState,
-            eternalRan,
-            toolCallCount,
-            durationMs: Date.now() - start,
-        };
-    }
-
-    // ── Agent builders ─────────────────────────────────────────────────────
-
-    private buildTremorAgent(): Agent {
-        // FAST MODEL — database operator.
-        // Reads one choice, writes a small set of world updates.
-        // Output should read like a precise field report, not an essay.
-        return new Agent({
-            id: "tremor",
-            name: "tremor",
-            model: openrouter(this.config.fastModel, {
-                extraBody: {
-                    reasoning: {
-                        max_tokens: 500,
-                        enabled: true
-                    }
-                }
-            }),
-            instructions: TREMOR_SYSTEM_PROMPT + TREMOR_OUTPUT_CONSTRAINT,
-            tools: {
-                world_update_agent: worldUpdateAgentTool,
-                world_update_location: worldUpdateLocationTool,
-                world_update_faction: worldUpdateFactionTool,
-                world_update_concept: worldUpdateConceptTool,
-                world_create_event: worldCreateEventTool,
-                world_resolve_event: worldResolveEventTool,
-                world_create_concept: worldCreateConceptTool,
-                world_update_relationship: worldUpdateRelationshipTool,
-                propagate_mood: propagateMoodTool,
-                propagate_concept: propagateConceptTool,
-                propagate_player_mark: propagatePlayerMarkTool,
-                check_significance: checkSignificanceTool,
-                check_contradiction: checkContradictionTool,
-                notify_eternal: notifyEternalTool,
-                notify_eternal_contradiction: notifyEternalContradictionTool,
-            },
-        });
-    }
-
-    private buildEternalAgent(): Agent {
-        // FAST MODEL — lore archivist.
-        // Receives one signal, makes one promotion decision, writes minimal lore.
-        // Three sentences of reasoning maximum before acting.
-        return new Agent({
-            id: "eternal",
-            name: "eternal",
-            model: openrouter(this.config.fastModel, {
-                extraBody: {
-                    reasoning: {
-                        max_tokens: 500,
-                        enabled: true
-                    }
-                }
-            }),
-            instructions: ETERNAL_SYSTEM_PROMPT + ETERNAL_OUTPUT_CONSTRAINT,
-            tools: {
-                world_get_event: worldGetEventTool,
-                world_get_agent: worldGetAgentTool,
-                world_get_concept: worldGetConceptTool,
-                lore_query_contradictions: loreQueryContradictionsTool,
-                lore_get_connections: loreGetConnectionsTool,
-                lore_create_node: loreCreateNodeTool,
-                lore_update_node: loreUpdateNodeTool,
-                lore_set_canon: loreSetCanonTool,
-                lore_create_relation: loreCreateRelationTool,
-                lore_merge_nodes: loreMergeNodesTool,
-                lore_archive_node: loreArchiveNodeTool,
-                lore_resolve_contradiction: loreResolveContradictionTool,
-                validate_canon_consistency: validateCanonConsistencyTool,
-            },
-        });
-    }
-
-    private buildWitnessAgent(): Agent {
-        // POWER MODEL — narrative reasoner.
-        // Reads many nodes, identifies tension, produces quality options.
-        // This is the one place where deeper reasoning earns its cost.
-        return new Agent({
-            id: "witness",
-            name: "witness",
-            model: openrouter(this.config.powerModel, {
-                extraBody: {
-                    reasoning: {
-                        max_tokens: 1200,
-                        enabled: true
-                    }
-                }
-            }),
-            instructions: WITNESS_SYSTEM_PROMPT,
-            tools: {
-                lore_query_relevant: loreQueryRelevantTool,
-                lore_get_connections: loreGetConnectionsTool,
-                lore_get_by_kind: loreGetByKindTool,
-                world_query_nearby_agents: worldQueryNearbyAgentsTool,
-                world_query_active_events: worldQueryActiveEventsTool,
-                world_get_agent_goals: worldGetAgentGoalsTool,
-                world_query_concepts_by_adoption: worldQueryConceptsByAdoptionTool,
-                world_get_faction_tensions: worldGetFactionTensionsTool,
-                check_story_phase: checkStoryPhaseTool,
-                generate_action_options: generateActionOptionsTool,
-                generate_dialogue_options: generateDialogueOptionsTool,
-                calculate_option_consequences: calculateOptionConsequencesTool,
-            },
-        });
-    }
-
-    private buildProseAgent(): Agent {
-        // POWER MODEL — the player-facing voice.
-        // 1-2 paragraphs. No tools. Pure generation.
-        // This is the other place where model quality is load-bearing.
-        return new Agent({
-            id: "prose",
-            name: "prose",
-            model: openrouter(this.config.proseModel, {
-                extraBody: {
-                    reasoning: {
-                        max_tokens: 1200,
-                        enabled: true
-                    }
-                }
-            }),
-            instructions: this.buildProseSystemPrompt(),
-            tools: {},
-        });
-    }
-
-    // ── Prompt builders ────────────────────────────────────────────────────
-
-    private buildTremorPrompt(input: TurnInput): string {
-        return `
-SESSION: ${input.sessionId}
-TURN: ${input.turnNumber}
-PLAYER CHOSE: "${input.chosenOptionText}"
-WORLD IMPACT: ${JSON.stringify(input.worldImpact, null, 2)}
-
-Process this choice. Update the world. Signal me if anything significant occurred.
-    `.trim();
-    }
-
-    private buildEternalPrompt(signal: { eventId: string; reason: string; significance: number }): string {
-        return `
-The Tremor has flagged an event for your review.
-
-EVENT ID: ${signal.eventId}
-SIGNIFICANCE: ${signal.significance}
-REASON: ${signal.reason}
-
-Evaluate this event. Decide whether to promote it to permanent lore.
-Check for contradictions. If promoting, write the lore. Validate and log.
-    `.trim();
-    }
-
-    private async buildWitnessPrompt(input: TurnInput): Promise<string> {
-        // Get the player's current location for the Witness to query nearby agents
-        const db = await getDB();
-        const [agentRows] = await db.query<[{ location_id: string }[]]>(
-            `SELECT location_id FROM world_agent WHERE id = $id`,
-            { id: input.playerId }
-        );
-        const playerLocation = agentRows?.[0]?.location_id ?? "unknown";
-
-        return `
-SESSION: ${input.sessionId}
-TURN: ${input.turnNumber}
-PLAYER ID: ${input.playerId}
-PLAYER LOCATION: ${playerLocation}
-
-The world has been updated. Read both graphs, assemble context,
-and produce the player's next 3-5 options. Follow your 7-step process.
-
-IMPORTANT RULES: 
-- generate_action_options MUST be called every turn. It is not optional. If you are running low on steps, 
-skip additional context queries and call generate_action_options immediately.
-    `.trim();
-    }
-
-    private buildProsePrompt(
-        input: TurnInput,
-        witnessContext: string,
-        options: NarrativeOption[],
-        narrativePhase: NarrativePhaseState
-    ): string {
-        return `
-OUTPUT: 1-2 paragraphs, consisting of 3-5 sentences each. No more than 170 words total with an AVERAGE sentence length of
-15-20 words. ONLY use NO MORE THAN 8% adverbs and adjectives combined with an 85/15 split of Germanic/Latinate vocabulary
-with a Flesch-Kincaid Grade Level of 8-10. Write in the second person, present tense. 
-Name the tension. Spark the imagination. Do not hide what is happening.
-
-CONTEXT FROM THE WITNESS:
-${witnessContext.slice(0, 1200)}
-
-OPTIONS GENERATED:
-${options.map((o, i) => `${i + 1}. ${o.text}`).join("\n")}
-
-GENRE: ${this.config.genreTone.replace("_", " ")}
-
-NARRATIVE PHASE: This is the ${narrativePhase.current_phase} phase of The Heroes Journey. The response should be grounded in
-where we are in that journey. Ordinary World is the player in his or her normal, daily routine. The Call to Adventure is
-when the player is presented with a challenge or opportunity that will change their life. Refusal of the Call is when the
-player hesitates or refuses the challenge. Meeting the Mentor is when the player meets someone who will guide or help them.
-Crossing the Threshold is when the player commits to the journey. Tests, Allies, and Enemies is when the player faces
-challenges and meets allies and enemies. The Ordeal is when the player faces their greatest fear or challenge. The Reward is
-when the player receives a reward for overcoming the challenge. The Road Back is when the player returns to their normal
-life. The Resurrection is when the player faces one last challenge before returning to their normal life. The Return with
-the Elixir is when the player returns to their normal life with a reward that will help them and their community. If the 
-${narrativePhase.phase_charge} is low, the player is at the beginning of the ${narrativePhase.current_phase} phase and 
-should be guided toward the next phase. If the ${narrativePhase.phase_charge} is high, the player is at the end of the 
-${narrativePhase.current_phase} and the prose should reflect a rise in tension. The phase stats to pay CLOSE ATTENTION to
-are the archetype cohesion: ${narrativePhase.archetype_cohesion} and narrative entropy: ${narrativePhase.narrative_entropy}.
-A low archetype cohesion (under 0.5) means the player is not embracing their archetype and should be guided towards a 1.0.
-A high narrative entropy (over 0.6) means the story is becoming chaotic and should be guided toward a more coherent narrative (0.4).
-
-Write only the scene description. No options. No narration labels.
-    `.trim();
-    }
-
-    private buildProseSystemPrompt(): string {
-        const toneMap: Record<EngineConfig["genreTone"], string> = {
-            thriller: PROSE_SYSTEM_PROMPTS.thriller,
-            southern_gothic: PROSE_SYSTEM_PROMPTS.southern_gothic,
-            science_fiction: PROSE_SYSTEM_PROMPTS.science_fiction,
-            fantasy: PROSE_SYSTEM_PROMPTS.fantasy,
-            horror: PROSE_SYSTEM_PROMPTS.horror,
-        };
-        return `
-You are the Prose Agent. You write the scene description using very RICH and BEAUTIFUL prose that the player reads.
-You receive context from the Witness — world state, active events, NPC goals —
-and you transform it into immersive second-person present-tense prose.
-
-Your output is 1-2 paragraphs, consisting of 3-5 sentences each. That is all. No more.
-You name the tension. You do not resolve it.
-You describe the stakes and raise or lower them based on the tone and narrative phase metadata.
-You describe what the player perceives — not what they know.
-
-Tone: ${toneMap[this.config.genreTone]}
-Narrative Phase:
-
-
-Never use the words: "You feel", "You sense", "You notice".
-Show through what is seen, heard, and physically present.
-    `.trim();
-    }
-
-    // ── Helpers ────────────────────────────────────────────────────────────
-
-    private extractEternalSignal(tremorText: string): { eventId: string; reason: string; significance: number } | null {
-        // The Tremor writes a structured signal block when it calls notify_eternal.
-        // Parse it from the response text.
-        // In production this is better handled via a structured output schema on the Tremor agent.
-        const match = tremorText.match(/ETERNAL_SIGNAL:\s*({[\s\S]*?})/);
-        if (!match) return null;
-        try {
-            return JSON.parse(match[1]);
-        } catch {
-            return null;
-        }
-    }
-
-    private extractOptions(witnessResult: any): NarrativeOption[] {
-        // Walk all steps looking for generate_action_options tool result
-        for (const step of witnessResult.steps ?? []) {
-            for (const result of step.toolResults ?? []) {
-                const toolName = result.toolName
-                    ?? result.payload?.toolName
-                    ?? result.payload?.name;
-
-                if (toolName === 'generate_action_options') {
-                    const data = result.result
-                        ?? result.payload?.result
-                        ?? result.payload;
-
-                    if (Array.isArray(data)) return data;
-                    if (Array.isArray(data?.options)) return data.options;
-                }
-            }
-        }
-        return [];
-    }
-
-    private async readPhaseState(sessionId: string): Promise<NarrativePhaseState> {
-        const db = await getDB();
-        const [rows] = await db.query<[NarrativePhaseState[]]>(
-            `SELECT * FROM narrative_state WHERE session_id = $sid LIMIT 1`,
-            { sid: sessionId }
-        );
-        return rows?.[0] ?? {
-            current_phase: "ordinary_world",
-            phase_charge: 0,
-            narrative_entropy: 0,
-            archetype_cohesion: 0.8,
-            player_resonance: 0,
-            inertia_resistance: 0.5,
-        };
-    }
-
-    private countToolCalls(result: { steps?: unknown[] }): number {
-        // Mastra exposes tool call steps on the result object
-        return result.steps?.length ?? 0;
-    }
-
-    private cleanProseResult(text: string): string {
-        // The LLM sometimes echoes back instruction fragments wrapped in backticks.
-        // Strip these artifacts while preserving the actual story content.
-        if (!text) return text;
-
-        // Remove all backtick-wrapped content that looks like instructions
-        let cleaned = text.replace(/`[^`]*`/g, (match) => {
-            const content = match.slice(1, -1);
-            // Keep content that reads like actual story (has sentences with verbs)
-            const instructionKeywords = [
-                'Avoid', 'Use only', 'Show only', 'Focus on', 'Use vivid',
-                'Use strong', 'Use short', 'Use active', 'Use direct',
-                'Use concrete', 'Use sensory', 'Use staccato', 'Use selective',
-                'Use "filter"', 'Use "slow-burn"', 'Use lean prose',
-                '(Avoid', '(Use', '(Show', '(Focus', '(Use vivid',
-            ];
-            const isInstruction = instructionKeywords.some(kw => content.includes(kw));
-            if (isInstruction) return '';
-            return match; // Keep content that looks like story
-        });
-
-        // Split by paragraphs to process them individually
-        const paragraphs = cleaned.split(/\n\n+/);
-
-        // Filter out paragraphs that are pure instruction fragments
-        const storyParagraphs = paragraphs.filter(p => {
-            const trimmed = p.trim();
-            if (!trimmed) return false;
-
-            // Skip if it's very short and starts with instruction-like patterns
-            if (trimmed.length < 50) {
-                const instructionPatterns = [
-                    /^Avoid\s/i, /^Use\s/i, /^Show\s/i, /^Focus\s/i,
-                    /^\(Avoid/i, /^\(Use/i, /^\(Show/i, /^\(Focus/i,
-                ];
-                if (instructionPatterns.some(pat => pat.test(trimmed))) return false;
-            }
-
-            // Skip if paragraph is mostly parenthetical content (instructions)
-            const parenRatio = (trimmed.match(/\([^)]*\)/g) || []).join('').length / trimmed.length;
-            if (parenRatio > 0.5) return false;
-
-            return true;
-        });
-
-        // Join and clean up any remaining backticks
-        return storyParagraphs
-            .join('\n\n')
-            .replace(/`/g, '')
-            .replace(/\n{3,}/g, '\n\n')
-            .trim();
-    }
-
-    private async runNpcAgents(
-        sessionId: string,
-        agentIds: string[]
-    ): Promise<{ totalToolCalls: number }> {
-        // NPC agents run in parallel after the Tremor.
-        // Each reads the updated world state and decides whether to act.
-        // Implementation: each NPC agent is a lightweight instance of the
-        // Agent class with the NPC's persona baked into its system prompt
-        // and a subset of the Agent Game Tools from tools.ts.
-        // Left as a stub here — wired up in npc-agent.ts separately.
-        return { totalToolCalls: 0 };
-    }
-
-    private async persistBeat(
-        input: TurnInput,
-        options: NarrativeOption[],
-        sceneDescription: string
-    ): Promise<NarrativeBeat> {
-        const db = await getDB();
-        const beat: NarrativeBeat = {
-            beatId: crypto.randomUUID(),
-            sessionId: input.sessionId,
-            turnNumber: input.turnNumber,
-            sceneDescription,
-            activeThreads: [],
-            loreContext: [],
-            options,
-            generatedBy: "witness",
-            chosenOptionId: input.chosenOptionId,
-            chosenAt: new Date().toISOString(),
-            // appliedImpact, curatedBy, swarmReactions, reflectionNotes are optional —
-            // populated later by Tremor / Eternal once the choice is processed
-        };
-        await db.create<NarrativeBeat>(new Table("narrative_beat")).content(beat as unknown as Record<string, unknown>);
-        return beat;
+    getLinks(): BaseChainLink[] {
+        return this.links;
     }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// USAGE EXAMPLES
-// ═══════════════════════════════════════════════════════════════════════════
-
-/*
-  // Ashenveil Chronicles — dark fantasy
-  const ashenveilEngine = ACEEngine.builder()
-    .powerModel("anthropic/claude-sonnet-4-5")  // Witness + Prose only
-    .fastModel("anthropic/claude-haiku-4-5")    // Tremor + Eternal + NPCs
-    .genre("fantasy")
-    .eternalThreshold(0.6)
-    .maxSteps(30, 20, 25)
-    .phaseThresholds({
-      ordinary_world:     0.4,
-      call_to_adventure:  0.6,
-      crossing_threshold: 0.8,
-      ordeal:             0.9,
-    })
-    .build();
-
-  // Spy thriller — everything fast, prose is terse anyway
-  const thrillerEngine = ACEEngine.builder()
-    .powerModel("anthropic/claude-sonnet-4-5")
-    .fastModel("anthropic/claude-haiku-4-5")
-    .genre("thriller")
-    .eternalThreshold(0.7)  // canon is harder to earn in a conspiracy world
-    .maxSteps(25, 15, 20)
-    .build();
-
-  // Southern gothic vampire — prose gets the power model, everything else fast
-  // The writing quality is the product here. Don't cheap out on the voice.
-  const vampireEngine = ACEEngine.builder()
-    .powerModel("anthropic/claude-sonnet-4-5")
-    .fastModel("anthropic/claude-haiku-4-5")
-    .genre("southern_gothic")
-    .eternalThreshold(0.55)  // memories become legend faster in this world
-    .maxSteps(35, 25, 30)
-    .phaseThresholds({
-      ordinary_world: 0.3,   // slow burn — let it breathe
-      descent:        0.7,
-    })
-    .build();
-
-  // Running a turn:
-  const output = await ashenveilEngine.runTurn({
-    sessionId: "session:abc123",
-    gameId:    "game:xyz789",
-    playerId:  "player:456",
-    chosenOptionId:   "opt_4",
-    chosenOptionText: "Go straight for the basement stairs.",
-    worldImpact: {
-      method_mark: 0.2,
-      story_progress: 0.08,
-      keeper_awareness: "suspicious",
-    },
-    turnNumber: 1,
-  });
-
-  // output.sceneDescription — 2-4 sentences for the player
-  // output.options          — 3-5 NarrativeOption objects
-  // output.eternalRan       — whether lore was updated this turn
-  // output.toolCallCount    — total tool calls across all agents (min 12)
-  // output.durationMs       — total wall time
-*/

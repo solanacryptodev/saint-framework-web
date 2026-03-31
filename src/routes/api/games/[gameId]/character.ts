@@ -33,19 +33,18 @@ export async function GET({ params, request }: { params: { gameId: string }; req
         return json({ error: "gameId required" }, { status: 400 });
     }
 
+    // Auth is required to check character status
+    const player = await getAuthenticatedPlayer(request);
+    if (!player) {
+        return json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Get all published templates for this game
     const templates = await getCharacterTemplates(cleanId, "published");
-    // console.log("templates", templates);
 
     // Check if player already has a character for this game
-    const player = await getAuthenticatedPlayer(request);
-    let existingCharacter: PlayerCharacter | null = null;
-    let hasCharacter = false;
-
-    if (player) {
-        existingCharacter = await getPlayerCharacterForGame(player.id, cleanId);
-        hasCharacter = existingCharacter !== null;
-    }
+    const existingCharacter = await getPlayerCharacterForGame(player.id, cleanId);
+    const hasCharacter = existingCharacter !== null;
 
     return json({
         templates,
