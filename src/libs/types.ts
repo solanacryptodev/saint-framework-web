@@ -170,6 +170,7 @@ export interface LoreEvent {
     session_id: string;
     turn_number: number;
     event_kind:
+    | "session_start"
     | "decision"
     | "consequence"
     | "revelation"
@@ -177,9 +178,12 @@ export interface LoreEvent {
     | "item_transfer"
     | "location_entered";
     description: string;
-    actors: string[];
+    agents: string[];
     locations: string[];
     items: string[];
+    factions: string[];
+    concepts: string[];
+    events: string[];
     consequences: string[];
     player_choice?: string;
     created_at?: string;
@@ -259,7 +263,7 @@ export interface WorldFaction {
     member_ids: string[];
     territory_ids: string[];
     narrative_weight: number;
-    gravitational_mass: [number, number, number]; // [trauma, hope, mystery]
+    gravitational_mass: { trauma: number; hope: number; mystery: number };
     emotional_charge: number;
     swarm_coherence: number;
     concept_affinity: string[];
@@ -745,6 +749,37 @@ export interface IngestionProgress {
     phase: "chunking" | "extracting" | "validating" | "world_init" | "complete";
     message: string;
     percent: number;
+}
+
+// ── Character Choices (what PlayerCreationModal passes up) ─────────────────
+
+export interface CharacterChoices {
+    templateId: string | undefined;
+    displayName: string;
+    chosenBackstory: string | undefined;
+    chosenTraits: string[];
+    chosenItems: string[];
+}
+
+// ── Parsed Player Character Section (from parser) ──────────────────────────
+
+export interface ParsedPlayerCharacterSection {
+    base_name: string;
+    kind: CharacterKind;
+    status: CharacterStatus;
+    description: string;
+    fixed_traits: string[];
+    backstory_options: BackstoryOption[];
+    trait_options: string[];
+    item_options: StartingItemOption[];
+    max_item_picks: number;
+    allow_custom_name: boolean;
+    allow_portrait: boolean;
+    starting_location: string;
+    prebuilt_backstory?: string;
+    prebuilt_traits?: string[];
+    prebuilt_items?: string[];
+    raw_markdown: string;
 }
 
 // ── SAINT narrative physics — player session ───────────────────────────────

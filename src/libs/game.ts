@@ -141,9 +141,10 @@ export async function updateGameInfo(
 
 export async function getGame(gameId: string): Promise<GameRecord | null> {
     const db = await getDB();
+    const cleanId = sanitizeGameId(gameId);
 
     // Ensure we have the full record ID format "game:xxx"
-    const recordId = gameId.startsWith("game:") ? gameId : `game:${gameId}`;
+    const recordId = `game:${cleanId}`;
 
     const [rows] = await db.query<[GameRecord[]]>(
         `SELECT * FROM type::thing($id)`,

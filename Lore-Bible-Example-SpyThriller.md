@@ -7,8 +7,6 @@
 - **Cost Tier**: paid
 - **Tags**: espionage, cold war, moral compromise, secrets, betrayal
 
----
-
 ## Player Characters
 
 ### Operative Ghost
@@ -50,11 +48,10 @@ Former cryptanalysis officer turned field operative after an incident in Prague 
 
 ---
 
-### Custom Operative
+### The Operative
 **Kind**: template
 **Status**: published
 
-**Name**: The Operative
 **Description**: You came to this work through your own door. The Agency doesn't care how — only that you're useful. Define who you are before the mission defines you.
 
 **Fixed Traits**:
@@ -85,8 +82,6 @@ Former cryptanalysis officer turned field operative after an incident in Prague 
 
 **Allow Custom Name**: true
 **Allow Portrait**: true
-
----
 
 ## Characters
 

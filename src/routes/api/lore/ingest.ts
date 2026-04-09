@@ -16,7 +16,7 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { ingestLoreBible } from "~/agentic/lore-ingestion-agent";
 import { guardRoute } from "~/libs/session";
-import { getGame, updateGameStatus, updateGameInfo, getPlayerDisplayName, updateGameCreatedBy } from "~/libs/game";
+import { getGame, updateGameStatus, updateGameInfo, getPlayerDisplayName, updateGameCreatedBy, sanitizeGameId } from "~/libs/game";
 import { getDB } from "~/libs/surreal";
 import type { IngestionProgress } from "~/libs/types";
 
@@ -76,9 +76,11 @@ export async function POST(event: APIEvent) {
                 controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`));
 
             try {
+                const cleanGameId = sanitizeGameId(gameId ?? "");
                 const report = await ingestLoreBible(
                     markdown,
                     file.name,
+                    cleanGameId,
                     (progress: IngestionProgress) => send({ type: "progress", ...progress })
                 );
 

@@ -19,7 +19,7 @@ export async function applySchema(db: Surreal) {
     DEFINE FIELD IF NOT EXISTS significance   ON lore_node TYPE float   DEFAULT 0.5;
     DEFINE FIELD IF NOT EXISTS epoch          ON lore_node TYPE option<string>;
     DEFINE FIELD IF NOT EXISTS temporal_order ON lore_node TYPE option<int>;
-    DEFINE FIELD IF NOT EXISTS properties     ON lore_node TYPE object  DEFAULT {};
+    DEFINE FIELD IF NOT EXISTS properties ON lore_node FLEXIBLE TYPE object DEFAULT {};
     DEFINE FIELD IF NOT EXISTS created_at     ON lore_node TYPE datetime DEFAULT time::now();
     DEFINE FIELD IF NOT EXISTS updated_at     ON lore_node TYPE datetime DEFAULT time::now();
     DEFINE INDEX IF NOT EXISTS lore_node_name  ON lore_node COLUMNS name;
@@ -39,9 +39,12 @@ export async function applySchema(db: Surreal) {
     DEFINE FIELD IF NOT EXISTS turn_number   ON lore_event TYPE int;
     DEFINE FIELD IF NOT EXISTS event_kind    ON lore_event TYPE string;
     DEFINE FIELD IF NOT EXISTS description   ON lore_event TYPE string;
-    DEFINE FIELD IF NOT EXISTS actors        ON lore_event TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS agents        ON lore_event TYPE array<string> DEFAULT [];
     DEFINE FIELD IF NOT EXISTS locations     ON lore_event TYPE array<string> DEFAULT [];
     DEFINE FIELD IF NOT EXISTS items         ON lore_event TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS factions      ON lore_event TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS concepts      ON lore_event TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS events       ON lore_event TYPE array<string> DEFAULT [];
     DEFINE FIELD IF NOT EXISTS consequences  ON lore_event TYPE array<string> DEFAULT [];
     DEFINE FIELD IF NOT EXISTS player_choice ON lore_event TYPE option<string>;
     DEFINE FIELD IF NOT EXISTS created_at    ON lore_event TYPE datetime DEFAULT time::now();
@@ -554,51 +557,88 @@ export async function applyEntityAssetSchema() {
 }
 
 // ── Player Character Schema ──────────────────────────────────────────────────────────────────
+// Section 1A: Full schema rewrite per TODO_3.md
 
 export async function applyPlayerCharacterSchema() {
   const db = await getDB();
 
   await db.query(`
-  --What the world - builder defined in ## Player Character
-    DEFINE TABLE IF NOT EXISTS player_character_template SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS game_id          ON player_character_template TYPE string;
-    DEFINE FIELD IF NOT EXISTS base_name        ON player_character_template TYPE string;
-    DEFINE FIELD IF NOT EXISTS description      ON player_character_template TYPE string;
-    DEFINE FIELD IF NOT EXISTS fixed_traits     ON player_character_template TYPE array < string > DEFAULT[];
-    DEFINE FIELD IF NOT EXISTS backstory_options ON player_character_template TYPE array < object > DEFAULT[];
-    DEFINE FIELD IF NOT EXISTS trait_options    ON player_character_template TYPE array < string > DEFAULT[];
-    DEFINE FIELD IF NOT EXISTS item_options     ON player_character_template TYPE array < object > DEFAULT[];
-    DEFINE FIELD IF NOT EXISTS max_item_picks   ON player_character_template TYPE int DEFAULT 1;
-    DEFINE FIELD IF NOT EXISTS allow_custom_name ON player_character_template TYPE bool DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS allow_portrait   ON player_character_template TYPE bool DEFAULT true;
-    DEFINE FIELD IF NOT EXISTS starting_location ON player_character_template TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS lore_node_id     ON player_character_template TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS raw_markdown     ON player_character_template TYPE string DEFAULT "";
-    DEFINE FIELD IF NOT EXISTS created_at       ON player_character_template TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS pct_game         ON player_character_template COLUMNS game_id UNIQUE;
-    DEFINE FIELD IF NOT EXISTS kind              ON player_character_template TYPE string DEFAULT "template";
-    DEFINE FIELD IF NOT EXISTS status            ON player_character_template TYPE string DEFAULT "published";
-    DEFINE FIELD IF NOT EXISTS portrait_url      ON player_character_template TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS prebuilt_backstory ON player_character_template TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS prebuilt_traits   ON player_character_template TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS prebuilt_items    ON player_character_template TYPE array<string> DEFAULT [];
-    DEFINE FIELD IF NOT EXISTS updated_at        ON player_character_template TYPE datetime DEFAULT time::now();
+    -- ── player_character_template ──────────────────────────────────────────────
 
-  --What the player chose at character creation
+    DEFINE TABLE IF NOT EXISTS player_character_template SCHEMAFULL;
+
+    -- Scope
+    DEFINE FIELD IF NOT EXISTS game_id   ON player_character_template TYPE string;
+
+    DEFINE FIELD IF NOT EXISTS kind   ON player_character_template TYPE string DEFAULT 'template';
+    DEFINE FIELD IF NOT EXISTS status ON player_character_template TYPE string DEFAULT 'published';
+
+    -- Identity
+    DEFINE FIELD IF NOT EXISTS base_name     ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS description   ON player_character_template TYPE string DEFAULT '';
+    DEFINE FIELD IF NOT EXISTS portrait_url  ON player_character_template TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS lore_node_id  ON player_character_template TYPE option<string>;
+
+    -- Customization arrays
+    DEFINE FIELD IF NOT EXISTS fixed_traits  ON player_character_template TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS trait_options ON player_character_template TYPE array<string> DEFAULT [];
+
+    -- Nested object arrays — must define [*] fields or content is dropped
+    DEFINE FIELD IF NOT EXISTS backstory_options             ON player_character_template TYPE array<object> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS backstory_options[*]          ON player_character_template TYPE object;
+    DEFINE FIELD IF NOT EXISTS backstory_options[*].id       ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS backstory_options[*].label    ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS backstory_options[*].description ON player_character_template TYPE string;
+
+    DEFINE FIELD IF NOT EXISTS item_options              ON player_character_template TYPE array<object> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS item_options[*]           ON player_character_template TYPE object;
+    DEFINE FIELD IF NOT EXISTS item_options[*].id        ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS item_options[*].name      ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS item_options[*].description ON player_character_template TYPE string;
+    DEFINE FIELD IF NOT EXISTS item_options[*].lore_node_id ON player_character_template TYPE option<string>;
+
+    -- Constraints
+    DEFINE FIELD IF NOT EXISTS max_item_picks    ON player_character_template TYPE int DEFAULT 1;
+    DEFINE FIELD IF NOT EXISTS allow_custom_name ON player_character_template TYPE bool DEFAULT true;
+    DEFINE FIELD IF NOT EXISTS allow_portrait    ON player_character_template TYPE bool DEFAULT true;
+    DEFINE FIELD IF NOT EXISTS starting_location ON player_character_template TYPE string DEFAULT '';
+
+    -- Prebuilt character resolved fields (null for template kind)
+    DEFINE FIELD IF NOT EXISTS prebuilt_backstory ON player_character_template TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS prebuilt_traits    ON player_character_template TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS prebuilt_items     ON player_character_template TYPE array<string> DEFAULT [];
+
+    -- Source
+    DEFINE FIELD IF NOT EXISTS raw_markdown ON player_character_template TYPE string DEFAULT '';
+    DEFINE FIELD IF NOT EXISTS created_at   ON player_character_template TYPE datetime DEFAULT time::now();
+    DEFINE FIELD IF NOT EXISTS updated_at   ON player_character_template TYPE datetime DEFAULT time::now();
+
+    -- Index: NOT unique — multiple templates per game allowed
+    DEFINE INDEX IF NOT EXISTS pct_game   ON player_character_template COLUMNS game_id;
+    DEFINE INDEX IF NOT EXISTS pct_status ON player_character_template COLUMNS game_id, status;
+
+    -- ── player_character ───────────────────────────────────────────────────────
+
     DEFINE TABLE IF NOT EXISTS player_character SCHEMAFULL;
-    DEFINE FIELD IF NOT EXISTS game_id          ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS player_id        ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS session_id       ON player_character TYPE string;
-    DEFINE FIELD IF NOT EXISTS template_id      ON player_character TYPE string;
+
+    DEFINE FIELD IF NOT EXISTS game_id    ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS player_id  ON player_character TYPE string;
+    DEFINE FIELD IF NOT EXISTS session_id ON player_character TYPE string;
+
+    DEFINE FIELD IF NOT EXISTS template_id ON player_character TYPE option<string>;
+    DEFINE FIELD IF NOT EXISTS kind        ON player_character TYPE string DEFAULT 'template';
+
     DEFINE FIELD IF NOT EXISTS display_name     ON player_character TYPE string;
     DEFINE FIELD IF NOT EXISTS portrait_url     ON player_character TYPE option<string>;
     DEFINE FIELD IF NOT EXISTS chosen_backstory ON player_character TYPE option<string>;
-    DEFINE FIELD IF NOT EXISTS chosen_traits    ON player_character TYPE array < string > DEFAULT[];
-    DEFINE FIELD IF NOT EXISTS chosen_items     ON player_character TYPE array < string > DEFAULT[];
+    DEFINE FIELD IF NOT EXISTS chosen_traits    ON player_character TYPE array<string> DEFAULT [];
+    DEFINE FIELD IF NOT EXISTS chosen_items     ON player_character TYPE array<string> DEFAULT [];
     DEFINE FIELD IF NOT EXISTS world_actor_id   ON player_character TYPE option<string>;
     DEFINE FIELD IF NOT EXISTS created_at       ON player_character TYPE datetime DEFAULT time::now();
-    DEFINE INDEX IF NOT EXISTS pc_session       ON player_character COLUMNS session_id UNIQUE;
-    DEFINE INDEX IF NOT EXISTS pc_player_game   ON player_character COLUMNS player_id, game_id;
+
+    -- Index: NOT unique on session_id — "PENDING" would conflict on multiple attempts
+    DEFINE INDEX IF NOT EXISTS pc_player_game ON player_character COLUMNS player_id, game_id;
+    DEFINE INDEX IF NOT EXISTS pc_session     ON player_character COLUMNS session_id;
   `);
 }
 

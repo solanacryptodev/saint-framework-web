@@ -265,7 +265,7 @@ Check for contradictions. If promoting, write the lore. Validate and log.
                 // Mastra wraps outputs across multiple possible variants depending on SDK version.
                 // Safest approach: traverse to find the first Array, which is guaranteed to be our options.
                 let optionsData: any[] | null = null;
-                
+
                 const searchForArray = (obj: any): any[] | null => {
                     if (!obj || typeof obj !== "object") return null;
                     if (Array.isArray(obj)) return obj;
@@ -285,7 +285,7 @@ Check for contradictions. If promoting, write the lore. Validate and log.
                 optionsData = searchForArray(resultItem);
 
                 console.log(`[extractOptions] FOUND ${toolName}! Valid Array Extracted:`, optionsData !== null);
-                
+
                 if (optionsData) {
                     console.log(`[extractOptions] Extracted ${optionsData.length} options safely!`);
                     generatedOptions.push(...optionsData);
@@ -306,7 +306,7 @@ Check for contradictions. If promoting, write the lore. Validate and log.
                 extractFromItem(step);
             }
         }
-        
+
         return generatedOptions;
     }
 
@@ -402,10 +402,10 @@ Check for contradictions. If promoting, write the lore. Validate and log.
         return { results: [], totalToolCalls: 0 };
     }
 
-    const { buildTremorAgent }  = await import("../agentic/game/agents/tremor-agent");
+    const { buildTremorAgent } = await import("../agentic/game/agents/tremor-agent");
     const { buildEternalAgent } = await import("../agentic/game/agents/eternal-agent");
     const { buildWitnessAgent } = await import("../agentic/game/agents/witness-agent");
-    const { buildProseAgent }   = await import("../agentic/game/agents/prose-agent");
+    const { buildProseAgent } = await import("../agentic/game/agents/prose-agent");
 
     // Mastra Agent satisfies AgenticAgent at runtime — cast is safe.
     // The generate() overloads accept {role,content}[] but TS can't see it through the union.
@@ -423,10 +423,10 @@ Check for contradictions. If promoting, write the lore. Validate and log.
         .npcAgents([])
 
         // ── Agent instances ────────────────────────────────────────────────
-        .withAgent("tremor",  asAgent(buildTremorAgent(models.fast)))
+        .withAgent("tremor", asAgent(buildTremorAgent(models.fast)))
         .withAgent("eternal", asAgent(buildEternalAgent(models.fast)))
         .withAgent("witness", asAgent(buildWitnessAgent(models.power)))
-        .withAgent("prose",   asAgent(buildProseAgent(models.power, tone)))
+        .withAgent("prose", asAgent(buildProseAgent(models.power, tone)))
 
         // ── Herald configuration ───────────────────────────────────────────
         .withHerald({
@@ -694,7 +694,7 @@ export async function startSession(
     });
 
     // Copy WORLD_INIT world graph records into this player's session scope
-    await copyWorldInitToSession(sessionId, gameId);
+    // await copyWorldInitToSession(sessionId, gameId);
 
     // Seed player influence vectors at neutral start state
     await db.create(new Table("player_session")).content({
