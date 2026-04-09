@@ -128,7 +128,7 @@ export default function GeneralGame(props: GeneralGameProps) {
 
     // ── Character creation gate ──────────────────────────────────────────────
     const [showPlayerModal, setShowPlayerModal] = createSignal(false);
-    const [template, setTemplate] = createSignal<PlayerCharacterTemplate | null>(null);
+    const [templates, setTemplates] = createSignal<PlayerCharacterTemplate[]>([]);
     const [playerCharacter, setPlayerCharacter] = createSignal<PlayerCharacter | null>(null);
 
     // ── Turn progress (SSE stream state) ────────────────────────────────────
@@ -191,10 +191,9 @@ export default function GeneralGame(props: GeneralGameProps) {
                     await resumeOrStartSession(data.existingCharacter);
                 }
             } else if (data.templates?.length) {
-                setTemplate(data.templates[0]);
-                // console.log('data.templates[0]', data.templates[0]);
+                setTemplates(data.templates);
                 setShowPlayerModal(true);
-                setLoading(false);  // Show character creation modal
+                setLoading(false);  // Show character selection modal
             } else {
                 // No templates — show game with mock data until forge is complete
                 setSessionReady(false);
@@ -504,12 +503,11 @@ export default function GeneralGame(props: GeneralGameProps) {
                     intelPanel={<SiteIntelligence {...intelData()} />}
                 />
 
-                {/* Character creation modal */}
-                <Show when={showPlayerModal() && template() !== null}>
+                <Show when={showPlayerModal() && templates().length > 0}>
                     <PlayerCreationModal
                         isOpen={showPlayerModal()}
                         onClose={() => setShowPlayerModal(false)}
-                        template={template()!}
+                        templates={templates()}
                         onComplete={handleCharacterCreated}
                     />
                 </Show>

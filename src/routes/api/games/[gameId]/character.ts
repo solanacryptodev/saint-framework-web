@@ -57,8 +57,7 @@ export async function GET({ params, request }: { params: { gameId: string }; req
 
 export async function POST({ params, request }: { params: { gameId: string }; request: Request }) {
     const { gameId } = params;
-    // console.log("gameId", gameId);
-
+    const cleanId = sanitizeGameId(gameId);
 
     if (!gameId) {
         return json({ error: "gameId required" }, { status: 400 });
@@ -88,7 +87,7 @@ export async function POST({ params, request }: { params: { gameId: string }; re
         // console.log("template 1", template);
     } else {
         // Fallback: get first published template
-        const templates = await getCharacterTemplates(gameId, "published");
+        const templates = await getCharacterTemplates(cleanId, "published");
         template = templates[0] ?? null;
         // console.log("templates 2", templates);
     }
@@ -97,13 +96,15 @@ export async function POST({ params, request }: { params: { gameId: string }; re
         return json({ error: "No character template found" }, { status: 404 });
     }
 
-    // Verify template belongs to this game
-    if (template.game_id !== gameId) {
+    // Verify template belongs to this game.
+    // Normalize both sides — existing templates may have "game:" prefix stored
+    // before the ingest.ts sanitization fix was applied.
+    if (sanitizeGameId(String(template.game_id)) !== cleanId) {
         return json({ error: "Template does not belong to this game" }, { status: 400 });
     }
 
     // Check if player already has a character
-    const existing = await getPlayerCharacterForGame(player.id, gameId);
+    const existing = await getPlayerCharacterForGame(player.id, cleanId);
     if (existing) {
         return json({ error: "Player already has a character for this game" }, { status: 409 });
     }
@@ -131,7 +132,7 @@ export async function POST({ params, request }: { params: { gameId: string }; re
     let character: PlayerCharacter;
     try {
         character = await createPlayerCharacter({
-            game_id: gameId,
+            game_id: cleanId,
             player_id: player.id,
             session_id: "PENDING",
             template_id: template.id ? String(template.id) : undefined,

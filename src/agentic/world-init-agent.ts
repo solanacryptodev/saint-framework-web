@@ -157,8 +157,10 @@ After writing everything, briefly summarize the starting world state.
 export async function initializeWorldGraph(
     loreSummary: string,   // prose summary of the lore bible
     loreNodes: LoreNode[], // all nodes written by the Lore Ingestion Agent
+    gameId: string,        // sanitized game ID for scoping — REQUIRED
     onProgress?: (update: IngestionProgress) => void
 ): Promise<WorldInitReport> {
+    if (!gameId) throw new Error("[world-init] gameId is required but was not provided");
     const db = await getDB();
 
     onProgress?.({ phase: "world_init", message: "World Init Agent reading lore graph…", percent: 60 });
@@ -172,6 +174,9 @@ export async function initializeWorldGraph(
         {
             role: "user",
             content: `
+GAME_ID: ${gameId}
+You MUST pass "${gameId}" as the game_id argument on EVERY tool call without exception. Do not invent, infer, or substitute a different value.
+
 Initialize the World Graph from the following lore context.
 
 LORE SUMMARY:

@@ -53,7 +53,9 @@ export const writeLocationTool = createTool({
             `SELECT id FROM lore_node WHERE string::lowercase(name) = string::lowercase($n) LIMIT 1`,
             { n: lore_node_name }
         );
-        const loreRef = loreRows?.[0] ? String(loreRows[0].id) : "";
+        // FIX: lore_ref schema is option<record<lore_node>>, not string.
+        // Pass the raw record ID (or undefined) instead of stringifying.
+        const loreRef = loreRows?.[0] ? loreRows[0].id : undefined;
 
         const [created] = await db.create<WorldLocation>(new Table("world_location")).content({
             game_id: game_id,
@@ -290,7 +292,8 @@ export const writeFactionTool = createTool({
             member_ids: memberIds,
             territory_ids: territoryIds,
             narrative_weight: 0.5,
-            gravitational_mass: [0.0, 0.0, 0.0] as [number, number, number],
+            // FIX: world_faction schema expects gravitational_mass as object, not array
+            gravitational_mass: { trauma: 0.0, hope: 0.0, mystery: 0.0 },
             emotional_charge: 0,
             swarm_coherence: 0.5,
             concept_affinity: [],

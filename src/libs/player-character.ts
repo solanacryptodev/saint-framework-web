@@ -31,33 +31,58 @@ import {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 export async function upsertPlayerCharacterTemplate(
-    template: Omit<PlayerCharacterTemplate, "id" | "created_at">
+    template: Omit<PlayerCharacterTemplate, "id" | "created_at" | "updated_at">
 ): Promise<PlayerCharacterTemplate> {
     const db = await getDB();
 
-    // Upsert on game_id + base_name — allows multiple templates per game (one per character)
+    // Match on game_id + base_name — not just game_id
     const [existing] = await db.query<[PlayerCharacterTemplate[]]>(
-        `SELECT * FROM player_character_template WHERE game_id = $gid AND base_name = $base_name LIMIT 1`,
-        { gid: template.game_id, base_name: template.base_name }
+        `SELECT * FROM player_character_template
+     WHERE game_id = $gid AND base_name = $name LIMIT 1`,
+        { gid: template.game_id, name: template.base_name }
     );
 
     if (existing?.[0]) {
+        // Bug 2 fix — interpolate the record ID directly into the query string.
+        // SurrealDB 2.x does not reliably resolve a RecordId passed as a $param
+        // in an UPDATE statement; it treats it as a literal string and matches nothing.
+        // The ID comes from a prior DB query so interpolation is safe.
+        const recordId = String(existing[0].id);
         const [updated] = await db.query<[PlayerCharacterTemplate[]]>(
-            `UPDATE $id SET
+            `UPDATE ${recordId} SET
          kind = $kind, status = $status,
-         description = $description,
+         description = $description, portrait_url = $portrait_url,
          fixed_traits = $fixed_traits, backstory_options = $backstory_options,
          trait_options = $trait_options, item_options = $item_options,
-         max_item_picks = $max_item_picks, allow_custom_name = $allow_custom_name,
-         allow_portrait = $allow_portrait, starting_location = $starting_location,
-         lore_node_id = $lore_node_id, raw_markdown = $raw_markdown`,
-            { id: String(existing[0].id), ...template }
+         max_item_picks = $max_item_picks,
+         allow_custom_name = $allow_custom_name, allow_portrait = $allow_portrait,
+         starting_location = $starting_location, lore_node_id = $lore_node_id,
+         prebuilt_backstory = $prebuilt_backstory, prebuilt_traits = $prebuilt_traits,
+         prebuilt_items = $prebuilt_items, raw_markdown = $raw_markdown,
+         updated_at = time::now()`,
+            { ...template }
         );
         return updated[0];
     }
 
-    const [created] = await db.create<PlayerCharacterTemplate>(new Table("player_character_template")).content(template);
-    return created;
+    // Bug 1 fix — created_at and updated_at are intentionally omitted from .content().
+    // The schema defines both as TYPE datetime DEFAULT time::now(); passing a JS
+    // ISO string causes a type-validation rejection in SurrealDB 2.x.
+    //
+    // Bug 3 fix — wrap in try/catch so failures surface instead of being swallowed.
+    try {
+        const [created] = await db.create<PlayerCharacterTemplate>(
+            new Table("player_character_template")
+        ).content({
+            ...template,
+            // created_at and updated_at omitted — schema DEFAULT time::now() handles them
+        });
+        return created;
+    } catch (err) {
+        console.error("[upsertPlayerCharacterTemplate] create failed:", err);
+        console.error("[upsertPlayerCharacterTemplate] template was:", JSON.stringify(template, null, 2));
+        throw err;
+    }
 }
 
 export async function getPlayerCharacterTemplate(
@@ -95,11 +120,17 @@ export async function getCharacterTemplates(
     status?: string
 ): Promise<PlayerCharacterTemplate[]> {
     const db = await getDB();
+    // Tolerate both formats:
+    //   - bare ID ("01jrc...")          ← produced by fixed ingest.ts (going forward)
+    //   - prefixed ID ("game:01jrc...")  ← stored by old ingest.ts (existing data)
+    // This lets existing games work without requiring a re-ingest.
+    const bareId = gameId.includes(":") ? gameId.split(":")[1] : gameId;
+    const prefixedId = `game:${bareId}`;
     const [rows] = await db.query<[PlayerCharacterTemplate[]]>(
         status
-            ? `SELECT * FROM player_character_template WHERE game_id = $gid AND status = $status`
-            : `SELECT * FROM player_character_template WHERE game_id = $gid`,
-        { gid: gameId, status }
+            ? `SELECT * FROM player_character_template WHERE (game_id = $gid OR game_id = $gid_prefixed) AND status = $status`
+            : `SELECT * FROM player_character_template WHERE (game_id = $gid OR game_id = $gid_prefixed)`,
+        { gid: bareId, gid_prefixed: prefixedId, status }
     );
     return rows ?? [];
 }
@@ -150,6 +181,9 @@ export interface ParsedPlayerCharacterSection {
     allow_custom_name: boolean;
     allow_portrait: boolean;
     starting_location: string;
+    prebuilt_backstory?: string;
+    prebuilt_traits?: string[];
+    prebuilt_items?: string[];
     raw_markdown: string;
 }
 
@@ -170,20 +204,28 @@ export function parsePlayerCharacterSection(
     let allow_custom_name = true;
     let allow_portrait = true;
     let starting_location = "";
+    let prebuilt_backstory: string | undefined;
+    let prebuilt_traits: string[] | undefined;
+    let prebuilt_items: string[] | undefined;
 
     // Track which multi-line block we're parsing
-    let currentBlock: "backstory" | "traits" | "items" | "none" = "none";
+    let currentBlock: "backstory" | "traits" | "items" | "fixed_traits" | "none" = "none";
     let currentBackstory: BackstoryOption | null = null;
 
     for (const rawLine of lines) {
         const line = rawLine.trim();
 
         // Bold field: **Key**: value  or  - **Key**: value
-        const fieldMatch = line.match(/^[-*]?\s*\*\*(.+?)\*\*\s*[:\-]\s*(.*)$/);
+        // Also handles: **Key** (choose N): value  (parenthetical annotation before colon)
+        const fieldMatch = line.match(/^[-*]?\s*\*\*(.+?)\*\*\s*(?:\(([^)]*)\)\s*)?[:\-]\s*(.*)$/);
 
         if (fieldMatch) {
             const key = fieldMatch[1].toLowerCase().replace(/\s+/g, "_");
-            const value = fieldMatch[2].trim();
+            const annotation = (fieldMatch[2] ?? "").toLowerCase(); // e.g. "choose 2"
+            const value = (fieldMatch[3] ?? "").trim();
+            // Extract "choose N" from annotation if present
+            const annotationChoose = annotation.match(/choose\s+(\d+)/i);
+            if (annotationChoose) max_item_picks = parseInt(annotationChoose[1]);
             currentBlock = "none";
             if (currentBackstory) { backstory_options.push(currentBackstory); currentBackstory = null; }
 
@@ -208,8 +250,13 @@ export function parsePlayerCharacterSection(
                 case "fixed":
                 case "fixed_traits":
                 case "fixed_abilities":
-                    fixed_traits = value.split(",").map(t => t.trim()).filter(Boolean)
-                        .map(t => t.replace(/^\[|\]$/g, ""));
+                    if (value) {
+                        fixed_traits = value.split(",").map(t => t.trim()).filter(Boolean)
+                            .map(t => t.replace(/^\[|\]$/g, ""));
+                    } else {
+                        // Multi-line list follows
+                        currentBlock = "fixed_traits";
+                    }
                     break;
                 case "traits":
                 case "trait_options":
@@ -255,6 +302,15 @@ export function parsePlayerCharacterSection(
                 case "choose_items":
                     max_item_picks = parseInt(value) || 1;
                     break;
+                case "prebuilt_backstory":
+                    prebuilt_backstory = value;
+                    break;
+                case "prebuilt_traits":
+                    prebuilt_traits = value.split(",").map(t => t.trim()).filter(Boolean);
+                    break;
+                case "prebuilt_items":
+                    prebuilt_items = value.split(",").map(i => i.trim()).filter(Boolean);
+                    break;
             }
             continue;
         }
@@ -263,6 +319,11 @@ export function parsePlayerCharacterSection(
         const subItemMatch = line.match(/^[-*]\s+(.+)$/);
         if (subItemMatch && currentBlock !== "none") {
             const text = subItemMatch[1].trim();
+
+            if (currentBlock === "fixed_traits") {
+                fixed_traits.push(text.replace(/^\[|\]$/g, ""));
+                continue;
+            }
 
             if (currentBlock === "backstory") {
                 // Format: - **The Exile**: backstory description
@@ -330,6 +391,9 @@ export function parsePlayerCharacterSection(
         allow_custom_name,
         allow_portrait,
         starting_location,
+        prebuilt_backstory,
+        prebuilt_traits,
+        prebuilt_items,
         raw_markdown: markdown,
     };
 }
